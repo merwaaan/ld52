@@ -42,6 +42,7 @@ export class GameState extends State<GameContext, EventId> {
   planetRotation: number = 0;
 
   shipVelocity: Three.Vector2;
+  shipIsGrabbing: boolean = false;
 
   world: World = new World([
     house(-0.02),
@@ -257,6 +258,10 @@ export class GameState extends State<GameContext, EventId> {
       let dt = rayAngle - this.rayHolder.rotation.z;
       dt = clamp(dt, -shipParams.rayAngleSpeedFactor, shipParams.rayAngleSpeedFactor);
       this.rayHolder.rotation.z += dt;
+    }
+
+    if (context.inputs.isButtonClicked(0)) {
+      this.shipIsGrabbing = !this.shipIsGrabbing;
     }
 
     // Update
