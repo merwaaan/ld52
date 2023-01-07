@@ -245,7 +245,6 @@ export class GameState extends State<GameContext, EventId> {
                        Math.PI * (2 - shipParams.rayMaxAngle));
       // Adjust for initial angle + ship slant offset
       rayAngle += Math.PI /2 - shipAngle;
-      console.log(rayAngle, shipAngle);
       // Clamp rotation speed
       let dt = rayAngle - this.rayHolder.rotation.z;
       dt = clamp(dt, -shipParams.rayAngleSpeedFactor, shipParams.rayAngleSpeedFactor);
