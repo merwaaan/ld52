@@ -35,7 +35,7 @@ export class GameState extends State<GameContext, EventId> {
     context.gui.add(shipParams, "maxSpeed", 0, 0.1);
     context.gui.add(shipParams, "friction", 0.7, 1);
     context.gui.add(shipParams, "slantFactor", 0, 10);
-    context.gui.add(shipParams, "rayAngleFactor", -3, 3);
+    context.gui.add(shipParams, "rayAngleSpeedFactor", -3, 3);
 
     // Setup scene
 
