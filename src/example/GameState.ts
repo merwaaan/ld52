@@ -17,7 +17,7 @@ const shipParams = {
   friction: 0.93,
   slantFactor: 0.05,
   rayMaxAngle: 0.2,
-  rayAngleSpeedFactor: 0.06,
+  rayAngleSpeedFactor: 0.1,
   attractRayOffScale: 0.1,
 };
 
@@ -79,13 +79,11 @@ export class GameState extends State<GameContext, EventId> {
       context.renderer.domElement.height / 2,
       -context.renderer.domElement.height / 2,
       0.01,
-      this.planetRadius + cameraVerticalOffset
+      10000
     );
     this.camera.position.z = 500;
-    this.camera.position.y = this.planetRadius;
-    this.camera.lookAt(
-      new Three.Vector3(0, this.planetRadius + cameraVerticalOffset, 0)
-    );
+    this.camera.lookAt(new Three.Vector3(0, 0, 0));
+    this.camera.position.y = this.planetRadius + 200;
 
     this.cameraPivot = new Three.Group();
     this.cameraPivot.add(this.camera);
@@ -117,14 +115,14 @@ export class GameState extends State<GameContext, EventId> {
       this.ship.position.z = -this.camera.position.z;
       this.camera.add(this.ship);
     }
-    const geometry = new Three.CircleGeometry(this.planetRadius, 100);
+    const geometry = new Three.SphereGeometry(this.planetRadius, 100, 100);
     const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
     const circle = new Three.Mesh(geometry, material);
     this.scene.add(circle);
 
     {
       const width = 180;
-      const height = 1200;
+      const height = 1000;
       const geometry = new Three.ConeGeometry(width, height, 32);
       const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
       material.transparent = true;
@@ -303,10 +301,19 @@ export class GameState extends State<GameContext, EventId> {
     this.ship.position.x += this.shipVelocity.x;
     this.ship.position.y += this.shipVelocity.y;
 
-    const shipBounds = 350;
+    const shipBoundsX = 350;
+    const shipBoundsY = [-180, 280];
 
-    this.ship.position.x = clamp(this.ship.position.x, -shipBounds, shipBounds);
-    this.ship.position.y = clamp(this.ship.position.y, -shipBounds, shipBounds);
+    this.ship.position.x = clamp(
+      this.ship.position.x,
+      -shipBoundsX,
+      shipBoundsX
+    );
+    this.ship.position.y = clamp(
+      this.ship.position.y,
+      shipBoundsY[0],
+      shipBoundsY[1]
+    );
 
     const shipAngle = this.shipVelocity.x * shipParams.slantFactor;
     this.ship.rotation.z = shipAngle;
@@ -319,19 +326,24 @@ export class GameState extends State<GameContext, EventId> {
     if (this.shipIsGrabbing) {
       this.shipRay.scale.x = 1;
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
-        this.shipRay.material.color = new Three.Color("yellow");
+        this.shipRay.material.color = new Three.Color(0x00ff00);
     } else {
       this.shipRay.scale.x = shipParams.attractRayOffScale;
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
         this.shipRay.material.color = new Three.Color(0x00ffff);
     }
 
+    const worldShipPosition = new Three.Vector3();
+    this.ship.getWorldPosition(worldShipPosition);
+    worldShipPosition.project(this.camera);
+
     const normalShipPosition = new Three.Vector2(
-      this.ship.position.x / shipBounds,
-      this.ship.position.y / shipBounds
+      worldShipPosition.x,
+      worldShipPosition.y
     );
 
     const shipToCursor = viewCursor.clone().sub(normalShipPosition);
+    shipToCursor.normalize();
     let rayAngle = shipToCursor.angle();
     if (rayAngle > Math.PI) {
       rayAngle = clamp(
