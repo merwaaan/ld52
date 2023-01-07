@@ -7,30 +7,21 @@ import { loop } from "../loop";
 
 import { StateMachine } from "../StateMachine";
 import { GameState } from "./GameState";
-import { MenuState } from "./MenuState";
+import { MenuState as LoadState } from "./LoadState";
 
 // Assets
 
-import carModelPath from "url:./assets/car/Car3.obj";
-import carTexturePath from "url:./assets/car/car3.png";
-import carStartupSoundPath from "url:./assets/car/Car_Engine_Start_Up.ogg";
-import carEngineSoundPath from "url:./assets/car/Car_Engine_Loop.ogg";
+import rockModelPath from "url:./assets/rock.obj";
+import treeModelPath from "url:./assets/tree.obj";
+import ufoModelPath from "url:./assets/ufo.obj";
 
 const assets = new Assets({
   models: {
-    carModel: carModelPath,
-  },
-  textures: {
-    carTexture: carTexturePath,
-  },
-  sounds: {
-    carStartupSound: carStartupSoundPath,
-    carEngineSound: carEngineSoundPath,
+    rock: rockModelPath,
+    tree: treeModelPath,
+    ufo: ufoModelPath,
   },
 });
-
-//const carModel = assets.model("carModel");
-//const carEngineSound = assets.sound("carEngineSound");
 
 // Setup game
 
@@ -57,19 +48,19 @@ gameContext.renderer.domElement.addEventListener("contextmenu", (event) => {
 
 // Setup states
 
-export type StateId = "menu" | "game";
+export type StateId = "load" | "game";
 export type EventId = "game_started" | "game_ended";
 
 const machine = new StateMachine<GameContext, StateId, EventId>(gameContext, {
-  initial: "game",
+  initial: "load",
   states: {
-    menu: {
-      state: new MenuState(),
+    load: {
+      state: new LoadState(),
       transitions: [{ event: "game_started", target: "game" }],
     },
     game: {
       state: new GameState(gameContext),
-      transitions: [{ event: "game_ended", target: "menu" }],
+      transitions: [{ event: "game_ended", target: "load" }],
     },
   },
 });

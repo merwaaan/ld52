@@ -4,7 +4,7 @@ import * as Three from "three";
 import { Entity } from "./Entity";
 
 export class Cow extends Entity {
-  model: Three.Mesh;
+  model: Three.Object3D;
   physics: Matter.Body;
 
   constructor(x: number, y: number, size: number) {

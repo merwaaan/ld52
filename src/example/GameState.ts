@@ -9,7 +9,7 @@ import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
-import { cow, house, World } from "./Worlds";
+import { cow, house, rock, tree, World } from "./Worlds";
 
 const shipParams = {
   accelFactor: 0.5,
@@ -51,13 +51,14 @@ export class GameState extends State<GameContext, EventId> {
   attractedBodies: Set<Matter.Body> = new Set();
 
   world: World = new World([
-    house(-0.02),
-    house(0),
-    house(0.03),
-    cow(0.06),
-    cow(0.08),
-    cow(0.09),
-    cow(0.1),
+    tree(0),
+    rock(-0.02),
+    // house(0),
+    // house(0.03),
+    // cow(0.06),
+    // cow(0.08),
+    // cow(0.09),
+    // cow(0.1),
   ]);
 
   constructor(context: GameContext) {
@@ -113,8 +114,10 @@ export class GameState extends State<GameContext, EventId> {
 
     // Ground
     const geometry = new Three.SphereGeometry(this.planetRadius, 64, 64);
-    const material = new Three.MeshLambertMaterial({ color: 0xffff80,
-                                                     emissive: 0x000000});
+    const material = new Three.MeshLambertMaterial({
+      color: 0xffff80,
+      emissive: 0x000000,
+    });
     material.flatShading = true;
     //material.wireframe = true;
     const circle = new Three.Mesh(geometry, material);
@@ -122,11 +125,14 @@ export class GameState extends State<GameContext, EventId> {
 
     // Ship
     {
-      const geometry = new Three.BoxGeometry(100, 25, 0.1);
-      const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
-      this.ship = new Three.Mesh(geometry, material);
+      this.ship = new Three.Group();
       this.ship.position.z = -this.camera.position.z;
       this.camera.add(this.ship);
+
+      context.assets.onReady((assets) => {
+        const shipModel = assets.model("ufo");
+        this.ship.add(shipModel);
+      });
     }
 
     // Tractor beam
@@ -203,7 +209,7 @@ export class GameState extends State<GameContext, EventId> {
     // Ship light
     {
       const spotLight = new Three.SpotLight(0x00a0af);
-      spotLight.angle = Math.PI/6;
+      spotLight.angle = Math.PI / 6;
       spotLight.intensity = 0.5;
       spotLight.penumbra = 0.2;
       spotLight.position.set(0, 0, 60);
@@ -215,7 +221,7 @@ export class GameState extends State<GameContext, EventId> {
     // Tractor beam light
     {
       const spotLight = new Three.SpotLight(0x00ff00);
-      spotLight.angle = Math.PI/12;
+      spotLight.angle = Math.PI / 12;
       spotLight.penumbra = 0.8;
       spotLight.position.set(0, 0, 60);
       spotLight.target = circle;
@@ -300,16 +306,25 @@ export class GameState extends State<GameContext, EventId> {
     // Move ship
     const accel = new Three.Vector2(0, 0);
 
-    if (context.inputs.isKeyDown("a")) {
+    if (
+      context.inputs.isKeyDown("a") ||
+      context.inputs.isKeyDown("ArrowLeft")
+    ) {
       accel.x = -1;
     }
-    if (context.inputs.isKeyDown("s")) {
+    if (
+      context.inputs.isKeyDown("s") ||
+      context.inputs.isKeyDown("ArrowRight")
+    ) {
       accel.x = +1;
     }
-    if (context.inputs.isKeyDown("w")) {
+    if (context.inputs.isKeyDown("w") || context.inputs.isKeyDown("ArrowUp")) {
       accel.y = +1;
     }
-    if (context.inputs.isKeyDown("r")) {
+    if (
+      context.inputs.isKeyDown("r") ||
+      context.inputs.isKeyDown("ArrowDown")
+    ) {
       accel.y = -1;
     }
 
@@ -362,13 +377,13 @@ export class GameState extends State<GameContext, EventId> {
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
         this.shipRay.material.color = new Three.Color(0x00ff00);
       this.tractorBeamLight.color = new Three.Color(0x00ff00);
-      this.tractorBeamLight.angle = Math.PI/14;
+      this.tractorBeamLight.angle = Math.PI / 14;
     } else {
       this.shipRay.scale.x = shipParams.attractRayOffScale;
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
         this.shipRay.material.color = new Three.Color(0x00ffff);
       this.tractorBeamLight.color = new Three.Color(0x00ffff);
-      this.tractorBeamLight.angle = Math.PI/64;
+      this.tractorBeamLight.angle = Math.PI / 64;
     }
 
     const worldShipPosition = new Three.Vector3();
@@ -442,7 +457,7 @@ export class GameState extends State<GameContext, EventId> {
     // Update
 
     Matter.Engine.update(this.physics, 1000 / 60);
-    this.world.update(this);
+    this.world.update(this, context);
 
     // Render
 
