@@ -3,6 +3,7 @@
   "scripts": {
     "start": "parcel src/example/index.html",
     "build": "parcel build src/example/index.html",
+    "fast-build": "parcel build src/example/index.html --no-optimize",
     "check": "tsc --noEmit"
   },
   "devDependencies": {

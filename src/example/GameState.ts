@@ -18,6 +18,7 @@ const shipParams = {
   slantFactor: 0.05,
   rayMaxAngle: 0.2,
   rayAngleSpeedFactor: 0.06,
+  attractRayOffScale: 0.1,
 };
 
 const cameraVerticalOffset = 200;
@@ -30,7 +31,7 @@ export class GameState extends State<GameContext, EventId> {
   //composer: EffectComposer;
   carModel: Three.Object3D | undefined;
   ship: Three.Object3D;
-  shipRay: Three.Object3D;
+  shipRay: Three.Mesh;
 
   rayHolder: Three.Group;
 
@@ -63,14 +64,17 @@ export class GameState extends State<GameContext, EventId> {
     context.gui.add(shipParams, "slantFactor", 0, 0.1);
     context.gui.add(shipParams, "rayMaxAngle", 0, 0.5);
     context.gui.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
+    context.gui.add(shipParams, "attractRayOffScale", 0, 0.1);
 
     // Setup scene
 
     this.scene = new Three.Scene();
 
-    this.camera = new Three.PerspectiveCamera(
-      70,
-      context.renderer.domElement.width / context.renderer.domElement.height,
+    this.camera = new Three.OrthographicCamera(
+      -context.renderer.domElement.width / 2,
+      context.renderer.domElement.width / 2,
+      context.renderer.domElement.height/2,
+      -context.renderer.domElement.height/2,
       0.01,
       this.planetRadius + cameraVerticalOffset
     );
@@ -253,6 +257,17 @@ export class GameState extends State<GameContext, EventId> {
     // Move ray
     if (context.inputs.isButtonClicked(0)) {
       this.shipIsGrabbing = !this.shipIsGrabbing;
+    }
+
+    if (this.shipIsGrabbing) {
+      this.shipRay.scale.x = 1;
+      if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+        this.shipRay.material.color = new Three.Color("yellow");
+    }
+    else {
+      this.shipRay.scale.x = shipParams.attractRayOffScale;
+      if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+        this.shipRay.material.color = new Three.Color(0x00ffff);
     }
 
     const normalShipPosition = new Three.Vector2(
