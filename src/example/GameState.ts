@@ -205,18 +205,18 @@ export class GameState extends State<GameContext, EventId> {
     }
 
     // Move ship
-    const accel = new Three.Vector2(0,0);
+    const accel = new Three.Vector2(0, 0);
 
-    if (context.inputs.isKeyDown('a')) {
+    if (context.inputs.isKeyDown("a")) {
       accel.x = -1;
     }
-    if (context.inputs.isKeyDown('s')) {
+    if (context.inputs.isKeyDown("s")) {
       accel.x = +1;
     }
-    if (context.inputs.isKeyDown('w')) {
+    if (context.inputs.isKeyDown("w")) {
       accel.y = +1;
     }
-    if (context.inputs.isKeyDown('r')) {
+    if (context.inputs.isKeyDown("r")) {
       accel.y = -1;
     }
 
@@ -228,8 +228,16 @@ export class GameState extends State<GameContext, EventId> {
       this.shipVelocity.x = 0;
       this.shipVelocity.y = 0;
     }
-    this.shipVelocity.x = clamp(this.shipVelocity.x, -shipParams.maxSpeed, shipParams.maxSpeed);
-    this.shipVelocity.y = clamp(this.shipVelocity.y, -shipParams.maxSpeed, shipParams.maxSpeed);
+    this.shipVelocity.x = clamp(
+      this.shipVelocity.x,
+      -shipParams.maxSpeed,
+      shipParams.maxSpeed
+    );
+    this.shipVelocity.y = clamp(
+      this.shipVelocity.y,
+      -shipParams.maxSpeed,
+      shipParams.maxSpeed
+    );
 
     this.cube.position.x += this.shipVelocity.x;
     this.cube.position.y += this.shipVelocity.y;
@@ -243,20 +251,29 @@ export class GameState extends State<GameContext, EventId> {
     this.cube.rotation.z = shipAngle;
 
     // Move ray
-    const normalShipPosition = new Three.Vector2(this.cube.position.x / shipBounds,
-                                                 this.cube.position.y / shipBounds);
+    const normalShipPosition = new Three.Vector2(
+      this.cube.position.x / shipBounds,
+      this.cube.position.y / shipBounds
+    );
 
     const shipToCursor = viewCursor.clone().sub(normalShipPosition);
     let rayAngle = shipToCursor.angle();
     if (rayAngle > Math.PI) {
-      rayAngle = clamp(rayAngle, Math.PI * (1 + shipParams.rayMaxAngle),
-                       Math.PI * (2 - shipParams.rayMaxAngle));
+      rayAngle = clamp(
+        rayAngle,
+        Math.PI * (1 + shipParams.rayMaxAngle),
+        Math.PI * (2 - shipParams.rayMaxAngle)
+      );
       // Adjust for initial angle + ship slant offset
-      rayAngle += Math.PI /2 - shipAngle;
+      rayAngle += Math.PI / 2 - shipAngle;
 
       // Clamp rotation speed
       let dt = rayAngle - this.rayHolder.rotation.z;
-      dt = clamp(dt, -shipParams.rayAngleSpeedFactor, shipParams.rayAngleSpeedFactor);
+      dt = clamp(
+        dt,
+        -shipParams.rayAngleSpeedFactor,
+        shipParams.rayAngleSpeedFactor
+      );
       this.rayHolder.rotation.z += dt;
     }
 
