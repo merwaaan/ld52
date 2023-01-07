@@ -13,7 +13,8 @@ const shipParams = {
   maxSpeed: 0.1,
   friction: 0.93,
   slantFactor: 1,
-  rayAngleSpeedFactor: 1,
+  rayMaxAngle: 0.2,
+  rayAngleSpeedFactor: 0.03,
 };
 
 export class GameState extends State<GameContext, EventId> {
@@ -35,7 +36,8 @@ export class GameState extends State<GameContext, EventId> {
     context.gui.add(shipParams, "maxSpeed", 0, 0.1);
     context.gui.add(shipParams, "friction", 0.7, 1);
     context.gui.add(shipParams, "slantFactor", 0, 10);
-    context.gui.add(shipParams, "rayAngleSpeedFactor", -3, 3);
+    context.gui.add(shipParams, "rayMaxAngle", 0, 0.5);
+    context.gui.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
 
     // Setup scene
 
@@ -84,6 +86,7 @@ export class GameState extends State<GameContext, EventId> {
 
       this.rayHolder = new THREE.Group();
       this.rayHolder.add(this.cone);
+      this.rayHolder.rotation.z = 2*Math.PI;
       this.cube.add(this.rayHolder);
     }
 
@@ -236,8 +239,18 @@ export class GameState extends State<GameContext, EventId> {
                                                  this.cube.position.y / shipBounds);
 
     const shipToCursor = viewCursor.clone().sub(normalShipPosition);
-    const rayAngle = shipToCursor.angle();
-    this.rayHolder.rotation.z = rayAngle + Math.PI/2 - shipAngle;
+    let rayAngle = shipToCursor.angle();
+    if (rayAngle > Math.PI) {
+      rayAngle = clamp(rayAngle, Math.PI * (1 + shipParams.rayMaxAngle),
+                       Math.PI * (2 - shipParams.rayMaxAngle));
+      // Adjust for initial angle + ship slant offset
+      rayAngle += Math.PI /2 - shipAngle;
+      console.log(rayAngle, shipAngle);
+      // Clamp rotation speed
+      let dt = rayAngle - this.rayHolder.rotation.z;
+      dt = clamp(dt, -shipParams.rayAngleSpeedFactor, shipParams.rayAngleSpeedFactor);
+      this.rayHolder.rotation.z += dt;
+    }
 
     // Render
 
