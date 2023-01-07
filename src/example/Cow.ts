@@ -15,7 +15,6 @@ export class Cow extends Entity {
     this.model = new Three.Mesh(geometry, material);
 
     this.physics = Matter.Bodies.rectangle(x, -y, size, size, {});
-    Matter.Body.setStatic(this.physics, true);
   }
 
   update() {}

@@ -30,8 +30,10 @@ export class GameState extends State<GameContext, EventId> {
   camera: Three.Camera;
   //composer: EffectComposer;
   carModel: Three.Object3D | undefined;
+
   ship: Three.Object3D;
   shipRay: Three.Mesh;
+  shipRayPhysics: Matter.Body;
 
   rayHolder: Three.Group;
 
@@ -39,11 +41,12 @@ export class GameState extends State<GameContext, EventId> {
   physicsRenderer: Matter.Render;
 
   planetRadius: number = 1000;
-  planetSpeed: number = 0.0005 * 3;
+  planetSpeed: number = 0.0005;
   planetRotation: number = 0;
 
   shipVelocity: Three.Vector2;
   shipIsGrabbing: boolean = false;
+  attractedBodies: Set<Matter.Body> = new Set();
 
   world: World = new World([
     house(-0.02),
@@ -73,8 +76,8 @@ export class GameState extends State<GameContext, EventId> {
     this.camera = new Three.OrthographicCamera(
       -context.renderer.domElement.width / 2,
       context.renderer.domElement.width / 2,
-      context.renderer.domElement.height/2,
-      -context.renderer.domElement.height/2,
+      context.renderer.domElement.height / 2,
+      -context.renderer.domElement.height / 2,
       0.01,
       this.planetRadius + cameraVerticalOffset
     );
@@ -129,6 +132,60 @@ export class GameState extends State<GameContext, EventId> {
       this.shipRay = new Three.Mesh(geometry, material);
       this.shipRay.position.y = -height / 2;
 
+      this.shipRayPhysics = Matter.Bodies.fromVertices(
+        0,
+        0,
+        [
+          [
+            { x: 0, y: 0 },
+            { x: width / 2, y: height },
+            { x: -width / 2, y: height },
+          ],
+        ],
+        {
+          isStatic: true,
+          isSensor: true,
+        }
+      );
+      Matter.Body.setCentre(
+        this.shipRayPhysics,
+        Matter.Vector.create(0, -height / 2),
+        true
+      );
+      Matter.Composite.add(this.physics.world, this.shipRayPhysics);
+
+      Matter.Events.on(this.physics, "collisionStart", (event) => {
+        const rayCollisions = event.pairs.filter(
+          (p) =>
+            p.bodyA == this.shipRayPhysics || p.bodyB == this.shipRayPhysics
+        );
+
+        if (rayCollisions.length > 0) {
+          for (const pair of rayCollisions) {
+            const other =
+              pair.bodyA == this.shipRayPhysics ? pair.bodyB : pair.bodyA;
+
+            this.attractedBodies.add(other);
+          }
+        }
+      });
+
+      Matter.Events.on(this.physics, "collisionEnd", (event) => {
+        const rayCollisions = event.pairs.filter(
+          (p) =>
+            p.bodyA == this.shipRayPhysics || p.bodyB == this.shipRayPhysics
+        );
+
+        if (rayCollisions.length > 0) {
+          for (const pair of rayCollisions) {
+            const other =
+              pair.bodyA == this.shipRayPhysics ? pair.bodyB : pair.bodyA;
+
+            this.attractedBodies.delete(other);
+          }
+        }
+      });
+
       this.rayHolder = new Three.Group();
       this.rayHolder.add(this.shipRay);
       this.rayHolder.rotation.z = 2 * Math.PI;
@@ -150,7 +207,7 @@ export class GameState extends State<GameContext, EventId> {
     Matter.Render.lookAt(
       this.physicsRenderer,
       ground,
-      Matter.Vector.create(300, 300)
+      Matter.Vector.create(200, 500)
     );
     Matter.Render.run(this.physicsRenderer);
 
@@ -192,21 +249,21 @@ export class GameState extends State<GameContext, EventId> {
     const raycaster = new Three.Raycaster();
     raycaster.setFromCamera(viewCursor, this.camera);
 
-    if (context.inputs.isButtonClicked(0)) {
-      for (const entity of this.world.spawnedEntities) {
-        const intersections = raycaster.intersectObject(entity.model);
+    // if (context.inputs.isButtonClicked(0)) {
+    //   for (const entity of this.world.spawnedEntities) {
+    //     const intersections = raycaster.intersectObject(entity.model);
 
-        if (intersections.length > 0) {
-          Matter.Body.setStatic(entity.physics, false);
+    //     if (intersections.length > 0) {
+    //       Matter.Body.setStatic(entity.physics, false);
 
-          Matter.Body.applyForce(
-            entity.physics,
-            entity.physics.position,
-            Matter.Vector.create(0, -0.1)
-          );
-        }
-      }
-    }
+    //       Matter.Body.applyForce(
+    //         entity.physics,
+    //         entity.physics.position,
+    //         Matter.Vector.create(0, -0.1)
+    //       );
+    //     }
+    //   }
+    // }
 
     // Move ship
     const accel = new Three.Vector2(0, 0);
@@ -263,8 +320,7 @@ export class GameState extends State<GameContext, EventId> {
       this.shipRay.scale.x = 1;
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
         this.shipRay.material.color = new Three.Color("yellow");
-    }
-    else {
+    } else {
       this.shipRay.scale.x = shipParams.attractRayOffScale;
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
         this.shipRay.material.color = new Three.Color(0x00ffff);
@@ -295,6 +351,43 @@ export class GameState extends State<GameContext, EventId> {
       );
       this.rayHolder.rotation.z += dt;
     }
+
+    const coneWorldPos = new Three.Vector3();
+    this.ship.getWorldPosition(coneWorldPos);
+    Matter.Body.setPosition(this.shipRayPhysics, {
+      x: coneWorldPos.x,
+      y: -coneWorldPos.y,
+    });
+    Matter.Body.setAngle(
+      this.shipRayPhysics,
+      this.planetRotation - this.rayHolder.rotation.z
+    );
+
+    if (this.attractedBodies.size > 0) {
+      for (const body of this.attractedBodies) {
+        const bodyPos = new Three.Vector3(body.position.x, -body.position.y, 0);
+
+        const shipPos = coneWorldPos.clone();
+        shipPos.z = 0;
+
+        const bodyToShip = shipPos.sub(bodyPos);
+        bodyToShip.normalize();
+        bodyToShip.multiplyScalar(0.003);
+
+        Matter.Body.applyForce(
+          body,
+          body.position,
+          Matter.Vector.create(bodyToShip.x, -bodyToShip.y)
+        );
+      }
+    }
+
+    // const bodies = [
+    //   this.conePhysics,
+    //   ...this.world.spawnedEntities.map((e) => e.physics),
+    // ];
+    // const detector = Matter.Detector.create({ bodies });
+    // console.log(Matter.Detector.collisions(detector));
 
     // Update
 

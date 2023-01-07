@@ -14,8 +14,10 @@ export class House extends Entity {
     const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
     this.model = new Three.Mesh(geometry, material);
 
-    this.physics = Matter.Bodies.rectangle(x, -y, size, size, {});
-    Matter.Body.setStatic(this.physics, true);
+    this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
+      //isStatic: true,
+      //isSensor: true,
+    });
   }
 
   update() {}
