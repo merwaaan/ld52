@@ -29,6 +29,10 @@ export class Inputs {
     document.addEventListener("mousemove", (event) => {
       this._cursorPosition = [event.clientX, event.clientY];
     });
+
+    document.addEventListener("blur", (event) => {
+      this._keysDown.clear();
+    });
   }
 
   get cursorPosition() {
