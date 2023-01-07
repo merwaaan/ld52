@@ -7,17 +7,17 @@ import Matter from "matter-js";
 
 import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
-import { computeNormalizedPosition } from "../utils";
+import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
 import { cow, house, World } from "./Worlds";
 
 const shipParams = {
-  accelFactor: 0.01,
-  maxSpeed: 0.1,
+  accelFactor: 0.5,
+  maxSpeed: 2.3,
   friction: 0.93,
-  slantFactor: 1,
+  slantFactor: 0.05,
   rayMaxAngle: 0.2,
-  rayAngleSpeedFactor: 0.03,
+  rayAngleSpeedFactor: 0.06,
 };
 
 const cameraVerticalOffset = 200;
@@ -28,11 +28,11 @@ export class GameState extends State<GameContext, EventId> {
   cameraPivot: Three.Group;
   camera: Three.Camera;
   //composer: EffectComposer;
-  carModel: THREE.Object3D | undefined;
-  cube: THREE.Object3D;
-  cone: THREE.Object3D;
+  carModel: Three.Object3D | undefined;
+  cube: Three.Object3D;
+  cone: Three.Object3D;
 
-  rayHolder: THREE.Group;
+  rayHolder: Three.Group;
 
   physics: Matter.Engine;
   physicsRenderer: Matter.Render;
@@ -56,10 +56,10 @@ export class GameState extends State<GameContext, EventId> {
   constructor(context: GameContext) {
     super();
 
-    context.gui.add(shipParams, "accelFactor", 0, 0.2);
-    context.gui.add(shipParams, "maxSpeed", 0, 0.1);
-    context.gui.add(shipParams, "friction", 0.7, 1);
-    context.gui.add(shipParams, "slantFactor", 0, 10);
+    context.gui.add(shipParams, "accelFactor", 0, 1);
+    context.gui.add(shipParams, "maxSpeed", 0, 3);
+    context.gui.add(shipParams, "friction", 0.85, 1);
+    context.gui.add(shipParams, "slantFactor", 0, 0.1);
     context.gui.add(shipParams, "rayMaxAngle", 0, 0.5);
     context.gui.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
 
@@ -103,10 +103,11 @@ export class GameState extends State<GameContext, EventId> {
     Matter.Composite.add(this.physics.world, [ground]);
 
     {
-      const geometry = new Three.BoxGeometry(4, 1, 0.1);
+      const geometry = new Three.BoxGeometry(100, 25, 0.1);
       const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
       this.cube = new Three.Mesh(geometry, material);
-      this.scene.add(this.cube);
+      this.cube.position.z = -this.camera.position.z;
+      this.camera.add(this.cube);
     }
     const geometry = new Three.CircleGeometry(this.planetRadius, 100);
     const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
@@ -114,21 +115,22 @@ export class GameState extends State<GameContext, EventId> {
     this.scene.add(circle);
 
     {
-      const width = 3;
-      const height = 40;
+      const width = 180;
+      const height = 1200;
       const geometry = new Three.ConeGeometry(width, height, 32);
       const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
       material.transparent = true;
       material.opacity = 0.5;
       this.cone = new Three.Mesh(geometry, material);
       this.cone.position.y = -height / 2;
-      // Physics debugger
 
       this.rayHolder = new Three.Group();
       this.rayHolder.add(this.cone);
       this.rayHolder.rotation.z = 2 * Math.PI;
       this.cube.add(this.rayHolder);
     }
+
+    // Physics debugger
     this.physicsRenderer = Matter.Render.create({
       engine: this.physics,
       element: document.body,
@@ -199,6 +201,62 @@ export class GameState extends State<GameContext, EventId> {
           );
         }
       }
+    }
+
+    // Move ship
+    const accel = new Three.Vector2(0,0);
+
+    if (context.inputs.isKeyDown('a')) {
+      accel.x = -1;
+    }
+    if (context.inputs.isKeyDown('s')) {
+      accel.x = +1;
+    }
+    if (context.inputs.isKeyDown('w')) {
+      accel.y = +1;
+    }
+    if (context.inputs.isKeyDown('r')) {
+      accel.y = -1;
+    }
+
+    accel.normalize().multiplyScalar(shipParams.accelFactor);
+
+    this.shipVelocity.add(accel);
+    this.shipVelocity.multiplyScalar(shipParams.friction);
+    if (this.shipVelocity.length() < 0.001) {
+      this.shipVelocity.x = 0;
+      this.shipVelocity.y = 0;
+    }
+    this.shipVelocity.x = clamp(this.shipVelocity.x, -shipParams.maxSpeed, shipParams.maxSpeed);
+    this.shipVelocity.y = clamp(this.shipVelocity.y, -shipParams.maxSpeed, shipParams.maxSpeed);
+
+    this.cube.position.x += this.shipVelocity.x;
+    this.cube.position.y += this.shipVelocity.y;
+
+    const shipBounds = 350;
+
+    this.cube.position.x = clamp(this.cube.position.x, -shipBounds, shipBounds);
+    this.cube.position.y = clamp(this.cube.position.y, -shipBounds, shipBounds);
+
+    const shipAngle = this.shipVelocity.x * shipParams.slantFactor;
+    this.cube.rotation.z = shipAngle;
+
+    // Move ray
+    const normalShipPosition = new Three.Vector2(this.cube.position.x / shipBounds,
+                                                 this.cube.position.y / shipBounds);
+
+    const shipToCursor = viewCursor.clone().sub(normalShipPosition);
+    let rayAngle = shipToCursor.angle();
+    if (rayAngle > Math.PI) {
+      rayAngle = clamp(rayAngle, Math.PI * (1 + shipParams.rayMaxAngle),
+                       Math.PI * (2 - shipParams.rayMaxAngle));
+      // Adjust for initial angle + ship slant offset
+      rayAngle += Math.PI /2 - shipAngle;
+
+      // Clamp rotation speed
+      let dt = rayAngle - this.rayHolder.rotation.z;
+      dt = clamp(dt, -shipParams.rayAngleSpeedFactor, shipParams.rayAngleSpeedFactor);
+      this.rayHolder.rotation.z += dt;
     }
 
     // Update
