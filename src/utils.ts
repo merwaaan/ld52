@@ -20,3 +20,12 @@ export function computeNormalizedPosition(
   const y = relativePosition[1] / rect.height;
   return [x, y];
 }
+
+export function clamp(x: number, min: number, max: number) {
+  if (x < min)
+    return min;
+  else if (x > max)
+    return max;
+  else
+    return x;
+}

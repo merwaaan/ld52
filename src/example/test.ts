@@ -44,7 +44,7 @@ const gameContext: GameContext = {
   assets,
 };
 
-gameContext.renderer.setSize(400, 400);
+gameContext.renderer.setSize(800, 600);
 gameContext.renderer.setClearColor(0x0, 1);
 document.body.appendChild(gameContext.renderer.domElement);
 

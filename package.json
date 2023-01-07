@@ -2,7 +2,8 @@
   "name": "gamejam-starterkit",
   "scripts": {
     "start": "parcel src/example/index.html",
-    "build": "parcel build src/example/index.html"
+    "build": "parcel build src/example/index.html",
+    "check": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/three": "^0.147.0",
