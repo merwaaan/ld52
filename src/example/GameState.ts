@@ -69,7 +69,7 @@ export class GameState extends State<GameContext, EventId> {
 
     this.camera = new Three.PerspectiveCamera(
       70,
-      1,
+      context.renderer.domElement.width / context.renderer.domElement.height,
       0.01,
       this.planetRadius + cameraVerticalOffset
     );
