@@ -37,6 +37,8 @@ export class GameState extends State<GameContext, EventId> {
 
   rayHolder: Three.Group;
 
+  tractorBeamLight: Three.SpotLight;
+
   physics: Matter.Engine;
   physicsRenderer: Matter.Render;
 
@@ -61,13 +63,14 @@ export class GameState extends State<GameContext, EventId> {
   constructor(context: GameContext) {
     super();
 
-    context.gui.add(shipParams, "accelFactor", 0, 1);
-    context.gui.add(shipParams, "maxSpeed", 0, 3);
-    context.gui.add(shipParams, "friction", 0.85, 1);
-    context.gui.add(shipParams, "slantFactor", 0, 0.1);
-    context.gui.add(shipParams, "rayMaxAngle", 0, 0.5);
-    context.gui.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
-    context.gui.add(shipParams, "attractRayOffScale", 0, 0.1);
+    const shipOptions = context.gui.addFolder("Ship");
+    shipOptions.add(shipParams, "accelFactor", 0, 1);
+    shipOptions.add(shipParams, "maxSpeed", 0, 3);
+    shipOptions.add(shipParams, "friction", 0.85, 1);
+    shipOptions.add(shipParams, "slantFactor", 0, 0.1);
+    shipOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
+    shipOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
+    shipOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
 
     // Setup scene
 
@@ -89,7 +92,7 @@ export class GameState extends State<GameContext, EventId> {
     this.cameraPivot.add(this.camera);
     this.scene.add(this.cameraPivot);
 
-    const ambientLight = new Three.AmbientLight("white");
+    const ambientLight = new Three.AmbientLight(0x202020);
     this.scene.add(ambientLight);
 
     const axesHelper = new Three.AxesHelper(50);
@@ -108,6 +111,16 @@ export class GameState extends State<GameContext, EventId> {
     );
     Matter.Composite.add(this.physics.world, [ground]);
 
+    // Ground
+    const geometry = new Three.SphereGeometry(this.planetRadius, 64, 64);
+    const material = new Three.MeshLambertMaterial({ color: 0xffff80,
+                                                     emissive: 0x000000});
+    material.flatShading = true;
+    //material.wireframe = true;
+    const circle = new Three.Mesh(geometry, material);
+    this.scene.add(circle);
+
+    // Ship
     {
       const geometry = new Three.BoxGeometry(100, 25, 0.1);
       const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
@@ -115,11 +128,8 @@ export class GameState extends State<GameContext, EventId> {
       this.ship.position.z = -this.camera.position.z;
       this.camera.add(this.ship);
     }
-    const geometry = new Three.SphereGeometry(this.planetRadius, 100, 100);
-    const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
-    const circle = new Three.Mesh(geometry, material);
-    this.scene.add(circle);
 
+    // Tractor beam
     {
       const width = 180;
       const height = 1000;
@@ -188,6 +198,30 @@ export class GameState extends State<GameContext, EventId> {
       this.rayHolder.add(this.shipRay);
       this.rayHolder.rotation.z = 2 * Math.PI;
       this.ship.add(this.rayHolder);
+    }
+
+    // Ship light
+    {
+      const spotLight = new Three.SpotLight(0x00a0af);
+      spotLight.angle = Math.PI/6;
+      spotLight.intensity = 0.5;
+      spotLight.penumbra = 0.2;
+      spotLight.position.set(0, 0, 60);
+      spotLight.target = circle;
+      spotLight.castShadow = true;
+      this.ship.add(spotLight);
+    }
+
+    // Tractor beam light
+    {
+      const spotLight = new Three.SpotLight(0x00ff00);
+      spotLight.angle = Math.PI/12;
+      spotLight.penumbra = 0.8;
+      spotLight.position.set(0, 0, 60);
+      spotLight.target = circle;
+      spotLight.castShadow = true;
+      this.tractorBeamLight = spotLight;
+      this.ship.add(spotLight);
     }
 
     // Physics debugger
@@ -327,10 +361,14 @@ export class GameState extends State<GameContext, EventId> {
       this.shipRay.scale.x = 1;
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
         this.shipRay.material.color = new Three.Color(0x00ff00);
+      this.tractorBeamLight.color = new Three.Color(0x00ff00);
+      this.tractorBeamLight.angle = Math.PI/14;
     } else {
       this.shipRay.scale.x = shipParams.attractRayOffScale;
       if (this.shipRay.material instanceof Three.MeshBasicMaterial)
         this.shipRay.material.color = new Three.Color(0x00ffff);
+      this.tractorBeamLight.color = new Three.Color(0x00ffff);
+      this.tractorBeamLight.angle = Math.PI/64;
     }
 
     const worldShipPosition = new Three.Vector3();
