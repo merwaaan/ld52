@@ -37,6 +37,7 @@ const assets = new Assets({
 export type GameContext = {
   renderer: THREE.WebGLRenderer;
   inputs: Inputs;
+  gui: dat.GUI;
   assets: typeof assets;
 };
 
@@ -60,7 +61,7 @@ export type StateId = "menu" | "game";
 export type EventId = "game_started" | "game_ended";
 
 const machine = new StateMachine<GameContext, StateId, EventId>(gameContext, {
-  initial: "menu",
+  initial: "game",
   states: {
     menu: {
       state: new MenuState(),

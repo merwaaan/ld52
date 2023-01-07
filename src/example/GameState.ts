@@ -1,12 +1,15 @@
-import * as THREE from "three";
+import * as Three from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 import * as TWEEN from "@tweenjs/tween.js";
+import Matter from "matter-js";
 
 import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
-import { clamp, computeNormalizedPosition } from "../utils";
+import { computeNormalizedPosition } from "../utils";
+import { House } from "./House";
+import { cow, house, World } from "./Worlds";
 
 const shipParams = {
   accelFactor: 0.01,
@@ -17,17 +20,38 @@ const shipParams = {
   rayAngleSpeedFactor: 0.03,
 };
 
-export class GameState extends State<GameContext, EventId> {
-  scene: THREE.Scene;
-  camera: THREE.Camera;
-  composer: EffectComposer;
+const cameraVerticalOffset = 200;
 
+export class GameState extends State<GameContext, EventId> {
+  scene: Three.Scene;
+
+  cameraPivot: Three.Group;
+  camera: Three.Camera;
+  //composer: EffectComposer;
   carModel: THREE.Object3D | undefined;
   cube: THREE.Object3D;
   cone: THREE.Object3D;
 
-  startupSound: THREE.Audio | undefined;
-  engineSound: THREE.Audio | undefined;
+  rayHolder: THREE.Group;
+
+  physics: Matter.Engine;
+  physicsRenderer: Matter.Render;
+
+  planetRadius: number = 1000;
+  planetSpeed: number = 0.0005 * 3;
+  planetRotation: number = 0;
+
+  shipVelocity: Three.Vector2;
+
+  world: World = new World([
+    house(-0.02),
+    house(0),
+    house(0.03),
+    cow(0.06),
+    cow(0.08),
+    cow(0.09),
+    cow(0.1),
+  ]);
 
   constructor(context: GameContext) {
     super();
@@ -41,219 +65,149 @@ export class GameState extends State<GameContext, EventId> {
 
     // Setup scene
 
-    this.scene = new THREE.Scene();
+    this.scene = new Three.Scene();
 
-    this.camera = new THREE.PerspectiveCamera(90, 1, 0.01, 100);
-    this.camera.position.z = 10;
-    this.camera.position.y = 0;
-    this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+    this.camera = new Three.PerspectiveCamera(
+      70,
+      1,
+      0.01,
+      this.planetRadius + cameraVerticalOffset
+    );
+    this.camera.position.z = 500;
+    this.camera.position.y = this.planetRadius;
+    this.camera.lookAt(
+      new Three.Vector3(0, this.planetRadius + cameraVerticalOffset, 0)
+    );
 
-    const ambientLight = new THREE.AmbientLight("white");
+    this.cameraPivot = new Three.Group();
+    this.cameraPivot.add(this.camera);
+    this.scene.add(this.cameraPivot);
+
+    const ambientLight = new Three.AmbientLight("white");
     this.scene.add(ambientLight);
 
-    this.composer = new EffectComposer(context.renderer);
+    const axesHelper = new Three.AxesHelper(50);
+    this.scene.add(axesHelper);
 
-    const renderPass = new RenderPass(this.scene, this.camera);
-    this.composer.addPass(renderPass);
+    this.physics = Matter.Engine.create();
 
-    const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(
-        context.renderer.domElement.width,
-        context.renderer.domElement.height
-      ),
-      0.5,
-      0.2,
-      0.2
+    var ground = Matter.Bodies.circle(
+      0,
+      0,
+      this.planetRadius,
+      {
+        isStatic: true,
+      },
+      100
     );
-    //this.composer.addPass(bloomPass);
+    Matter.Composite.add(this.physics.world, [ground]);
 
     {
-      const geometry = new THREE.BoxGeometry(4,1,0.1);
-      const material = new THREE.MeshBasicMaterial({color: 0x00ff00});
-      this.cube = new THREE.Mesh(geometry, material);
+      const geometry = new Three.BoxGeometry(4, 1, 0.1);
+      const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
+      this.cube = new Three.Mesh(geometry, material);
       this.scene.add(this.cube);
     }
+    const geometry = new Three.CircleGeometry(this.planetRadius, 100);
+    const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
+    const circle = new Three.Mesh(geometry, material);
+    this.scene.add(circle);
 
     {
       const width = 3;
       const height = 40;
-      const geometry = new THREE.ConeGeometry(width, height, 32);
-      const material = new THREE.MeshBasicMaterial({color: 0xffff00});
+      const geometry = new Three.ConeGeometry(width, height, 32);
+      const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
       material.transparent = true;
       material.opacity = 0.5;
-      this.cone = new THREE.Mesh(geometry, material);
-      this.cone.position.y = -height/2;
+      this.cone = new Three.Mesh(geometry, material);
+      this.cone.position.y = -height / 2;
+      // Physics debugger
 
-      this.rayHolder = new THREE.Group();
+      this.rayHolder = new Three.Group();
       this.rayHolder.add(this.cone);
-      this.rayHolder.rotation.z = 2*Math.PI;
+      this.rayHolder.rotation.z = 2 * Math.PI;
       this.cube.add(this.rayHolder);
     }
+    this.physicsRenderer = Matter.Render.create({
+      engine: this.physics,
+      element: document.body,
+      options: {
+        width: 400,
+        height: 400,
+        hasBounds: true,
+        showVelocity: true,
+      },
+    });
 
-    this.shipVelocity = new THREE.Vector2(0,0);
+    Matter.Render.lookAt(
+      this.physicsRenderer,
+      ground,
+      Matter.Vector.create(300, 300)
+    );
+    Matter.Render.run(this.physicsRenderer);
 
-    // context.assets.onReady((assets) => {
-    //   // Load the car
-
-    //   this.carModel = assets.model("carModel");
-    //   const carTexture = assets.texture("carTexture");
-
-    //   this.carModel.traverse((child) => {
-    //     if (child instanceof THREE.Mesh) {
-    //       child.material.map = carTexture;
-    //     }
-    //   });
-
-    //   //this.scene.add(this.carModel);
-
-    //   // Setup animations
-
-    //   this.carModel.rotation.y = -1;
-
-    //   new TWEEN.Tween(this.carModel.rotation)
-    //     .to({ y: 1 }, 10000)
-    //     .yoyo(true)
-    //     .repeat(Infinity)
-    //     .easing(TWEEN.Easing.Quadratic.InOut)
-    //     .start();
-
-    //   new TWEEN.Tween(this.carModel.scale)
-    //     .to({ y: 1.05 }, 100)
-    //     .yoyo(true)
-    //     .repeat(Infinity)
-    //     .start();
-
-    //   // Sounds
-
-    //   const listener = new THREE.AudioListener();
-
-    //   this.startupSound = new THREE.Audio(listener);
-    //   this.startupSound.setBuffer(assets.sound("carStartupSound"));
-
-    //   this.engineSound = new THREE.Audio(listener);
-    //   this.engineSound.setBuffer(assets.sound("carEngineSound"));
-    // });
+    this.shipVelocity = new Three.Vector2(0, 0);
   }
 
-  enter(context: GameContext) {
-    this.startupSound?.play();
-    this.engineSound?.play();
-  }
+  enter(context: GameContext) {}
 
-  exit(context: GameContext) {
-    this.startupSound?.stop();
-    this.engineSound?.stop();
-  }
+  exit(context: GameContext) {}
 
   update(context: GameContext, doTransition: (eventId: EventId) => void) {
-    TWEEN.update();
+    // Rotate the camera
 
-    // if (this.carModel) {
-    //   // Hover object = change color
+    const deltaRotation = this.planetSpeed; // TODO dt
+    this.planetRotation += deltaRotation;
+    this.cameraPivot.rotateZ(-deltaRotation);
 
-    //   const cursor = context.inputs.cursorPosition;
+    // Redirect gravity
 
-    //   const normalizedCursor = computeNormalizedPosition(
-    //     cursor,
-    //     context.renderer.domElement
-    //   );
+    // const gravityDir = new Three.Vector2(0, 1);
+    // gravityDir.rotateAround(new Three.Vector2(0, 0), this.planetRotation);
+    // this.physics.gravity.x = gravityDir.x;
+    // this.physics.gravity.y = gravityDir.y;
 
-    //   const viewCursor = new THREE.Vector2(
-    //     normalizedCursor[0] * 2 - 1,
-    //     -normalizedCursor[1] * 2 + 1
-    //   );
+    // Click = jump!
 
-    //   const raycaster = new THREE.Raycaster();
-    //   raycaster.setFromCamera(viewCursor, this.camera);
-    //   const intersections = raycaster.intersectObject(this.carModel);
-
-    //   const color = new THREE.Color(
-    //     intersections.length > 0 ? "yellow" : "white"
-    //   );
-
-    //   this.carModel.traverse((child) => {
-    //     if (child instanceof THREE.Mesh) {
-    //       child.material.color = color;
-    //     }
-    //   });
-
-    //   // Click object = exit game
-
-    //   const click = context.inputs.isButtonClicked(0);
-
-    //   if (click && intersections.length > 0) {
-    //     doTransition("game_ended");
-    //   }
-    // }
-
-    // Move ship
-    const accel = new THREE.Vector2(0,0);
-
-    if (context.inputs.isKeyDown('a')) {
-      accel.x = -1;
-    }
-    if (context.inputs.isKeyDown('s')) {
-      accel.x = +1;
-    }
-    if (context.inputs.isKeyDown('w')) {
-      accel.y = +1;
-    }
-    if (context.inputs.isKeyDown('r')) {
-      accel.y = -1;
-    }
-
-    accel.normalize().multiplyScalar(shipParams.accelFactor);
-
-    this.shipVelocity.add(accel);
-    this.shipVelocity.multiplyScalar(shipParams.friction);
-    if (this.shipVelocity.length() < 0.001) {
-      this.shipVelocity.x = 0;
-      this.shipVelocity.y = 0;
-    }
-    this.shipVelocity.x = clamp(this.shipVelocity.x, -shipParams.maxSpeed, shipParams.maxSpeed);
-    this.shipVelocity.y = clamp(this.shipVelocity.y, -shipParams.maxSpeed, shipParams.maxSpeed);
-
-    this.cube.position.x += this.shipVelocity.x;
-    this.cube.position.y += this.shipVelocity.y;
-
-    const shipBounds = 10;
-
-    this.cube.position.x = clamp(this.cube.position.x, -shipBounds, shipBounds);
-    this.cube.position.y = clamp(this.cube.position.y, -shipBounds, shipBounds);
-
-    const shipAngle = this.shipVelocity.x * shipParams.slantFactor;
-    this.cube.rotation.z = shipAngle;
-
-    // Move ray
     const cursor = context.inputs.cursorPosition;
+
     const normalizedCursor = computeNormalizedPosition(
       cursor,
       context.renderer.domElement
     );
-    const viewCursor = new THREE.Vector2(
+
+    const viewCursor = new Three.Vector2(
       normalizedCursor[0] * 2 - 1,
       -normalizedCursor[1] * 2 + 1
     );
 
-    const normalShipPosition = new THREE.Vector2(this.cube.position.x / shipBounds,
-                                                 this.cube.position.y / shipBounds);
+    const raycaster = new Three.Raycaster();
+    raycaster.setFromCamera(viewCursor, this.camera);
 
-    const shipToCursor = viewCursor.clone().sub(normalShipPosition);
-    let rayAngle = shipToCursor.angle();
-    if (rayAngle > Math.PI) {
-      rayAngle = clamp(rayAngle, Math.PI * (1 + shipParams.rayMaxAngle),
-                       Math.PI * (2 - shipParams.rayMaxAngle));
-      // Adjust for initial angle + ship slant offset
-      rayAngle += Math.PI /2 - shipAngle;
-      // Clamp rotation speed
-      let dt = rayAngle - this.rayHolder.rotation.z;
-      dt = clamp(dt, -shipParams.rayAngleSpeedFactor, shipParams.rayAngleSpeedFactor);
-      this.rayHolder.rotation.z += dt;
+    if (context.inputs.isButtonClicked(0)) {
+      for (const entity of this.world.spawnedEntities) {
+        const intersections = raycaster.intersectObject(entity.model);
+
+        if (intersections.length > 0) {
+          Matter.Body.setStatic(entity.physics, false);
+
+          Matter.Body.applyForce(
+            entity.physics,
+            entity.physics.position,
+            Matter.Vector.create(0, -0.1)
+          );
+        }
+      }
     }
+
+    // Update
+
+    Matter.Engine.update(this.physics, 1000 / 60);
+    this.world.update(this);
 
     // Render
 
-    //context.renderer.render(this.scene, this.camera);
-    this.composer.render();
+    context.renderer.render(this.scene, this.camera);
   }
 }
