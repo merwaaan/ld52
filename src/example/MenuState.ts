@@ -5,17 +5,19 @@ export class MenuState extends State<GameContext, EventId> {
   startButton: HTMLButtonElement;
   startButtonClicked: boolean = false;
 
-  enter(context: GameContext) {
-    if (!this.startButton) {
-      this.startButton = document.createElement("button");
-      this.startButton.innerHTML = "Start";
-      this.startButton.addEventListener(
-        "click",
-        () => (this.startButtonClicked = true)
-      );
-      document.body.append(this.startButton);
-    }
+  constructor(){
+    super();
 
+    this.startButton = document.createElement("button");
+    this.startButton.innerHTML = "Start";
+    this.startButton.addEventListener(
+      "click",
+      () => (this.startButtonClicked = true)
+    );
+    document.body.append(this.startButton);
+  }
+
+  enter(context: GameContext) {
     this.startButtonClicked = false;
 
     if (context.assets.loaded) {
@@ -25,7 +27,6 @@ export class MenuState extends State<GameContext, EventId> {
 
       context.assets.load();
       context.assets.onReady((assets) => {
-        console.log(1);
         this.startButton.disabled = false;
       });
     }

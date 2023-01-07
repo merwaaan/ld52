@@ -15,9 +15,9 @@ type OnReadyCallback<TAssets> = (assets: TAssets) => void;
 export class Assets<TAssets extends AssetList> {
   private _assetList: TAssets;
 
-  private _models: { [key in keyof TAssets["models"]]: THREE.Object3D };
-  private _textures: { [key in keyof TAssets["textures"]]: THREE.Texture };
-  private _sounds: { [key in keyof TAssets["sounds"]]: AudioBuffer };
+  private _models: { [key in keyof TAssets["models"]]: THREE.Object3D } = {} as { [key in keyof TAssets["models"]]: THREE.Object3D };
+  private _textures: { [key in keyof TAssets["textures"]]: THREE.Texture } = {} as { [key in keyof TAssets["textures"]]: THREE.Texture };
+  private _sounds: { [key in keyof TAssets["sounds"]]: AudioBuffer } = {}as { [key in keyof TAssets["sounds"]]: AudioBuffer };
 
   private _loaded: boolean = false;
   private _onReadyCallbacks: OnReadyCallback<Assets<TAssets>>[] = [];
@@ -48,8 +48,6 @@ export class Assets<TAssets extends AssetList> {
 
     // Models
 
-    this._models = {} as { [key in keyof TAssets["models"]]: THREE.Object3D };
-
     Object.entries(this._assetList["models"] ?? {}).forEach(([id, path]) => {
       new OBJLoader(manager).load(path, (object) => {
         this._models[id as keyof TAssets["models"]] = object;
@@ -58,10 +56,6 @@ export class Assets<TAssets extends AssetList> {
 
     // Textures
 
-    this._textures = {} as {
-      [key in keyof TAssets["textures"]]: THREE.Texture;
-    };
-
     Object.entries(this._assetList["textures"] ?? {}).forEach(([id, path]) => {
       new THREE.TextureLoader(manager).load(path, (texture) => {
         this._textures[id as keyof TAssets["textures"]] = texture;
@@ -69,10 +63,6 @@ export class Assets<TAssets extends AssetList> {
     });
 
     // Sounds
-
-    this._sounds = {} as {
-      [key in keyof TAssets["sounds"]]: AudioBuffer;
-    };
 
     Object.entries(this._assetList["sounds"] ?? {}).forEach(([id, path]) => {
       new THREE.AudioLoader(manager).load(path, (buffer) => {
