@@ -8,6 +8,14 @@ import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
 
+const shipParams = {
+  accelFactor: 0.01,
+  maxSpeed: 0.1,
+  friction: 0.93,
+  slantFactor: 1,
+  rayAngleSpeedFactor: 1,
+};
+
 export class GameState extends State<GameContext, EventId> {
   scene: THREE.Scene;
   camera: THREE.Camera;
@@ -22,6 +30,12 @@ export class GameState extends State<GameContext, EventId> {
 
   constructor(context: GameContext) {
     super();
+
+    context.gui.add(shipParams, "accelFactor", 0, 0.2);
+    context.gui.add(shipParams, "maxSpeed", 0, 0.1);
+    context.gui.add(shipParams, "friction", 0.7, 1);
+    context.gui.add(shipParams, "slantFactor", 0, 10);
+    context.gui.add(shipParams, "rayAngleFactor", -3, 3);
 
     // Setup scene
 
@@ -59,18 +73,21 @@ export class GameState extends State<GameContext, EventId> {
     }
 
     {
-      const geometry = new THREE.ConeGeometry(1, 10, 32);
+      const width = 3;
+      const height = 40;
+      const geometry = new THREE.ConeGeometry(width, height, 32);
       const material = new THREE.MeshBasicMaterial({color: 0xffff00});
       material.transparent = true;
       material.opacity = 0.5;
       this.cone = new THREE.Mesh(geometry, material);
-      this.cone.position.x = 0;
-      this.cone.position.y = -5;
-      this.cone.position.z = 0;
+      this.cone.position.y = -height/2;
 
-      //this.cone.rotation.z = 1;
-      this.cube.add(this.cone);
+      this.rayHolder = new THREE.Group();
+      this.rayHolder.add(this.cone);
+      this.cube.add(this.rayHolder);
     }
+
+    this.shipVelocity = new THREE.Vector2(0,0);
 
     // context.assets.onReady((assets) => {
     //   // Load the car
@@ -166,32 +183,61 @@ export class GameState extends State<GameContext, EventId> {
     //   }
     // }
 
-    const cursor = context.inputs.cursorPosition;
+    // Move ship
+    const accel = new THREE.Vector2(0,0);
 
+    if (context.inputs.isKeyDown('a')) {
+      accel.x = -1;
+    }
+    if (context.inputs.isKeyDown('s')) {
+      accel.x = +1;
+    }
+    if (context.inputs.isKeyDown('w')) {
+      accel.y = +1;
+    }
+    if (context.inputs.isKeyDown('r')) {
+      accel.y = -1;
+    }
+
+    accel.normalize().multiplyScalar(shipParams.accelFactor);
+
+    this.shipVelocity.add(accel);
+    this.shipVelocity.multiplyScalar(shipParams.friction);
+    if (this.shipVelocity.length() < 0.001) {
+      this.shipVelocity.x = 0;
+      this.shipVelocity.y = 0;
+    }
+    this.shipVelocity.x = clamp(this.shipVelocity.x, -shipParams.maxSpeed, shipParams.maxSpeed);
+    this.shipVelocity.y = clamp(this.shipVelocity.y, -shipParams.maxSpeed, shipParams.maxSpeed);
+
+    this.cube.position.x += this.shipVelocity.x;
+    this.cube.position.y += this.shipVelocity.y;
+
+    const shipBounds = 10;
+
+    this.cube.position.x = clamp(this.cube.position.x, -shipBounds, shipBounds);
+    this.cube.position.y = clamp(this.cube.position.y, -shipBounds, shipBounds);
+
+    const shipAngle = this.shipVelocity.x * shipParams.slantFactor;
+    this.cube.rotation.z = shipAngle;
+
+    // Move ray
+    const cursor = context.inputs.cursorPosition;
     const normalizedCursor = computeNormalizedPosition(
       cursor,
       context.renderer.domElement
     );
+    const viewCursor = new THREE.Vector2(
+      normalizedCursor[0] * 2 - 1,
+      -normalizedCursor[1] * 2 + 1
+    );
 
-    const angleFactor = 1;
-    const shipAngle = (normalizedCursor[0] - 0.5) * angleFactor;
-    this.cube.rotation.z = shipAngle;
+    const normalShipPosition = new THREE.Vector2(this.cube.position.x / shipBounds,
+                                                 this.cube.position.y / shipBounds);
 
-    if (context.inputs.isKeyDown('a')) {
-      this.cube.position.x -= 0.1;
-    }
-    if (context.inputs.isKeyDown('s')) {
-      this.cube.position.x += 0.1;
-    }
-    if (context.inputs.isKeyDown('w')) {
-      this.cube.position.y += 0.1;
-    }
-    if (context.inputs.isKeyDown('r')) {
-      this.cube.position.y -= 0.1;
-    }
-
-    this.cube.position.x = clamp(this.cube.position.x, -10, 10);
-    this.cube.position.y = clamp(this.cube.position.y, -10, 10);
+    const shipToCursor = viewCursor.clone().sub(normalShipPosition);
+    const rayAngle = shipToCursor.angle();
+    this.rayHolder.rotation.z = rayAngle + Math.PI/2 - shipAngle;
 
     // Render
 

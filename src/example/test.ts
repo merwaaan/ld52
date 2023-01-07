@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import * as dat from "dat.gui";
+import Stats from "stats.js";
 import { Assets } from "../Assets";
 import { Inputs } from "../Inputs";
 import { loop } from "../loop";
@@ -41,12 +43,16 @@ export type GameContext = {
 const gameContext: GameContext = {
   renderer: new THREE.WebGLRenderer({ antialias: true }),
   inputs: new Inputs(),
+  gui: new dat.GUI(),
   assets,
 };
 
 gameContext.renderer.setSize(800, 600);
 gameContext.renderer.setClearColor(0x0, 1);
 document.body.appendChild(gameContext.renderer.domElement);
+gameContext.renderer.domElement.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+});
 
 // Setup states
 
@@ -68,8 +74,13 @@ const machine = new StateMachine<GameContext, StateId, EventId>(gameContext, {
 });
 
 // Run
+const g_stats = new Stats();
+g_stats.showPanel(1);
+document.body.appendChild(g_stats.dom);
 
 loop(() => {
+  g_stats.begin();
   machine.update(gameContext);
   gameContext.inputs.update();
+  g_stats.end();
 });
