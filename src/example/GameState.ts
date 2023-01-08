@@ -10,7 +10,7 @@ import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
-import { cow, house, rock, tree, World } from "./Worlds";
+import { barn, cow, house, rock, tree, World } from "./Worlds";
 
 const shipParams = {
   accelFactor: 1.22,
@@ -58,8 +58,8 @@ export class GameState extends State<GameContext, EventId> {
   world: World = new World([
     rock(-0.03),
     tree(0),
-    rock(0.03),
-    tree(0.06),
+    cow(0.03),
+    barn(0.05),
     tree(0.08),
     rock(0.09),
     tree(0.1),

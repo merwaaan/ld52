@@ -2,19 +2,28 @@ import * as Matter from "matter-js";
 import * as Three from "three";
 
 import { Entity } from "./Entity";
+import { GameContext } from "./test";
+import { randomBetween } from "../utils";
 
 export class Cow extends Entity {
   model: Three.Object3D;
   physics: Matter.Body;
 
-  constructor(x: number, y: number, size: number) {
+  constructor(x: number, y: number, context: GameContext) {
     super();
 
-    const geometry = new Three.BoxGeometry(size, size);
-    const material = new Three.MeshBasicMaterial({ color: 0x0000ff });
-    this.model = new Three.Mesh(geometry, material);
+    this.model = new Three.Group();
 
-    this.physics = Matter.Bodies.rectangle(x, -y, size, size, {});
+    const scale = 25;
+
+    const cowModel = context.assets.model("cow").clone();
+    cowModel.translateY(-scale / 2);
+    cowModel.scale.set(scale, scale, scale);
+    this.model.add(cowModel);
+
+    this.physics = Matter.Bodies.rectangle(x, -y, scale, scale, {
+      //isStatic: true,
+    });
   }
 
   update() {}

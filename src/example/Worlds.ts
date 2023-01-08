@@ -8,21 +8,31 @@ import { Entity } from "./Entity";
 import { GameContext } from "./test";
 import { Tree } from "./Tree";
 import { Rock } from "./Rock";
+import { Barn } from "./Barn";
 
 type EntityDesc = {
   position: number;
-} & ({ type: "house" } | { type: "cow" } | { type: "tree" } | { type: "rock" });
+} & (
+  | { type: "barn" }
+  | { type: "cow" }
+  | { type: "house" }
+  | { type: "rock" }
+  | { type: "tree" }
+);
 
-// Factories
+//
 
-export function house(x: number): EntityDesc {
-  return { type: "house", position: x };
+export function barn(x: number): EntityDesc {
+  return { type: "barn", position: x };
 }
 
 export function cow(x: number): EntityDesc {
   return { type: "cow", position: x };
 }
 
+export function house(x: number): EntityDesc {
+  return { type: "house", position: x };
+}
 export function tree(x: number): EntityDesc {
   return { type: "tree", position: x };
 }
@@ -56,18 +66,18 @@ export class World {
     let entity: Entity;
 
     switch (entityDesc.type) {
+      case "barn":
+        entity = new Barn(position.x, position.y, 80, context);
+        break;
+      case "cow":
+        entity = new Cow(position.x, position.y, context);
+        break;
       case "house":
         entity = new House(position.x, position.y, 50);
         break;
-
-      case "cow":
-        entity = new Cow(position.x, position.y, 50);
-        break;
-
       case "tree":
         entity = new Tree(position.x, position.y, 60, context);
         break;
-
       case "rock":
         entity = new Rock(position.x, position.y, 20, context);
         break;

@@ -11,12 +11,16 @@ import { MenuState as LoadState } from "./LoadState";
 
 // Assets
 
+import barnModelPath from "url:./assets/barn.obj";
+import cowModelPath from "url:./assets/cow.obj";
 import rockModelPath from "url:./assets/rock.obj";
 import treeModelPath from "url:./assets/tree.obj";
 import ufoModelPath from "url:./assets/ufo.obj";
 
 const assets = new Assets({
   models: {
+    barn: barnModelPath,
+    cow: cowModelPath,
     rock: rockModelPath,
     tree: treeModelPath,
     ufo: ufoModelPath,
