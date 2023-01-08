@@ -6,6 +6,7 @@ import * as TWEEN from "@tweenjs/tween.js";
 import Matter from "matter-js";
 import { createNoise2D } from "simplex-noise";
 
+import {EntityState} from "./Entity";
 import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
@@ -27,6 +28,8 @@ const shipParams = {
   beamCloseSpeed: 160,
 
   beamForce: 0.016,
+  shipSlurpDistance: 40,
+  shipDespawnDistance: 20,
 };
 
 const cameraVerticalOffset = 200;
@@ -102,6 +105,8 @@ export class GameState extends State<GameContext, EventId> {
 
     const physicsOptions = context.gui.addFolder("Physics");
     physicsOptions.add(shipParams, "beamForce", 0, 0.02);
+    physicsOptions.add(shipParams, "shipSlurpDistance", 0, 500);
+    physicsOptions.add(shipParams, "shipDespawnDistance", 0, 100);
 
     // Setup scene
 
@@ -556,10 +561,11 @@ export class GameState extends State<GameContext, EventId> {
         shipPos.z = 0;
 
         const bodyToShip = shipPos.sub(bodyPos);
+        const distanceToShip = bodyToShip.length();
         bodyToShip.normalize();
         bodyToShip.multiplyScalar(shipParams.beamForce);
 
-        if (this.shipIsGrabbing) {
+        if (this.shipIsGrabbing || (entity.state > EntityState.BeingAbsorbed)) {
           entity.physics.frictionAir = 1;
 
           Matter.Body.applyForce(
@@ -567,6 +573,19 @@ export class GameState extends State<GameContext, EventId> {
             entity.physics.position,
             Matter.Vector.create(bodyToShip.x, -bodyToShip.y)
           );
+
+          if (distanceToShip < shipParams.shipDespawnDistance) {
+            this.world.despawn(entity, this);
+            this.attractedEntities.delete(entity);
+          }
+          else if (distanceToShip < shipParams.shipSlurpDistance) {
+            entity.state == EntityState.BeingAbsorbed;
+            const scale = distanceToShip / shipParams.shipSlurpDistance;
+
+            entity.model.scale.x = scale;
+            entity.model.scale.y = scale;
+            entity.model.scale.z = scale;
+          }
         } else {
           entity.physics.frictionAir = 0.01;
         }

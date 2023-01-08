@@ -56,6 +56,13 @@ export class World {
     this.entitiesToSpawn.sort((a, b) => (a > b ? 1 : b > a ? -1 : 0));
   }
 
+  lookupEntity(physics: Matter.Body): Entity | undefined {
+    for (const entity of this.spawnedEntities) {
+      if (entity.physics == physics) return entity;
+    }
+    return undefined;
+  }
+
   spawn(entityDesc: EntityDesc, state: GameState, context: GameContext) {
     console.debug("spawning entity", entityDesc);
 
