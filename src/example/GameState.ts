@@ -61,30 +61,7 @@ export class GameState extends State<GameContext, EventId> {
   shipIsGrabbing: boolean = false;
   attractedEntities: Set<Entity> = new Set();
 
-  world: World = new World([
-    rock(-0.03),
-    rock(-0.027),
-    rock(-0.025),
-    rock(-0.023),
-    rock(-0.021),
-    rock(-0.017),
-    rock(-0.015),
-    rock(-0.012),
-    rock(-0.002),
-    tree(0),
-    cow(0.03),
-    barn(0.05),
-    tree(0.01),
-    rock(0.012),
-    rock(0.015),
-    tree(0.025),
-    tree(0.028),
-    rock(0.03),
-    tree(0.06),
-    tree(0.08),
-    rock(0.09),
-    tree(0.1),
-  ]);
+  world: World = new World();
 
   constructor(context: GameContext) {
     super();

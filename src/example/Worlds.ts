@@ -48,12 +48,46 @@ export class World {
 
   spawnedEntities: Entity[] = [];
 
-  constructor(desc: EntityDesc[]) {
-    this.entitiesToSpawn = desc;
+  constructor() {
+    // const desc = [
+    //   rock(-0.03),
+    //   rock(-0.027),
+    //   rock(-0.025),
+    //   rock(-0.023),
+    //   rock(-0.021),
+    //   rock(-0.017),
+    //   rock(-0.015),
+    //   rock(-0.012),
+    //   rock(-0.002),
+    //   tree(0),
+    //   cow(0.03),
+    //   barn(0.05),
+    //   tree(0.01),
+    //   rock(0.012),
+    //   rock(0.015),
+    //   tree(0.025),
+    //   tree(0.028),
+    //   rock(0.03),
+    //   tree(0.06),
+    //   tree(0.08),
+    //   rock(0.09),
+    //   tree(0.1),
+    // ];
 
-    // Sort entities by position
+    this.entitiesToSpawn = this.generateNewEntities(-0.05);
+  }
 
-    this.entitiesToSpawn.sort((a, b) => (a > b ? 1 : b > a ? -1 : 0));
+  generateNewEntities(t: number) : EntityDesc[] {
+    let desc = [];
+    const tInc = 0.01;
+
+    let stop = 10;
+    while (t < stop) {
+      desc.push(rock(t));
+      t += tInc;
+    }
+
+    return desc;
   }
 
   lookupEntity(physics: Matter.Body): Entity | undefined {
@@ -109,7 +143,7 @@ export class World {
     // Spawn new entities
 
     const cycles = state.planetRotation / (2 * Math.PI); // radians to cycles
-    const margin = 0.04;
+    const margin = 0.08;
     const spawnLimit = cycles + margin;
 
     while (
