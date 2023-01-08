@@ -12,16 +12,25 @@ export class Tree extends Entity {
   constructor(x: number, y: number, size: number, context: GameContext) {
     super();
 
-    this.model = context.assets.model("tree").clone();
+    this.model = new Three.Group();
 
-    const horizontalScale = randomBetween(0.8, 1.2);
-    const verticalScale = randomBetween(0.7, 1.3);
+    const horizontalScale = size * randomBetween(0.8, 1.2);
+    const verticalScale = size * randomBetween(0.7, 1.3);
 
-    this.model.scale.set(horizontalScale, verticalScale, horizontalScale);
+    const treeModel = context.assets.model("tree").clone();
+    treeModel.translateY(-verticalScale / 2);
+    treeModel.scale.set(horizontalScale, verticalScale, horizontalScale);
+    this.model.add(treeModel);
 
-    this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
-      //isStatic: true,
-    });
+    this.physics = Matter.Bodies.rectangle(
+      x,
+      -y,
+      horizontalScale,
+      verticalScale,
+      {
+        //isStatic: true,
+      }
+    );
   }
 
   update() {}

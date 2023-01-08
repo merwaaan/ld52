@@ -12,23 +12,36 @@ export class Rock extends Entity {
   constructor(x: number, y: number, size: number, context: GameContext) {
     super();
 
-    this.model = context.assets.model("rock").clone();
+    this.model = new Three.Group();
 
-    this.model.scale.set(
-      randomBetween(0.7, 1.4),
-      randomBetween(0.7, 1.4),
-      randomBetween(0.7, 1.4)
-    );
+    const rockModel = context.assets.model("rock").clone();
 
-    this.model.rotation.set(
+    const horizontalScale = size * randomBetween(0.7, 1.6);
+    const verticalScale = size * randomBetween(0.7, 1.6);
+
+    rockModel.translateY(-verticalScale / 2);
+
+    rockModel.scale.set(horizontalScale, verticalScale, horizontalScale);
+
+    rockModel.rotation.set(
       Math.random() * 2 * Math.PI,
       Math.random() * 2 * Math.PI,
       Math.random() * 2 * Math.PI
     );
 
-    this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
-      //isStatic: true,
-    });
+    this.model.add(rockModel);
+
+    this.physics = Matter.Bodies.rectangle(
+      x,
+      -y,
+      horizontalScale,
+      verticalScale,
+      {
+        //isStatic: true,
+        //isSensor: true,
+        //isSleeping: true,
+      }
+    );
   }
 
   update() {}

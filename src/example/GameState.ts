@@ -56,7 +56,7 @@ export class GameState extends State<GameContext, EventId> {
 
   world: World = new World([
     rock(-0.03),
-    rock(0),
+    tree(0),
     rock(0.03),
     tree(0.06),
     tree(0.08),
@@ -224,6 +224,7 @@ export class GameState extends State<GameContext, EventId> {
       Matter.Composite.add(this.physics.world, this.shipRayPhysics);
 
       Matter.Events.on(this.physics, "collisionStart", (event) => {
+        console.log(event.pairs[0]);
         const rayCollisions = event.pairs.filter(
           (p) =>
             p.bodyA == this.shipRayPhysics || p.bodyB == this.shipRayPhysics
@@ -295,6 +296,7 @@ export class GameState extends State<GameContext, EventId> {
         height: 400,
         hasBounds: true,
         showVelocity: true,
+        showSleeping: true,
       },
     });
 
@@ -321,10 +323,11 @@ export class GameState extends State<GameContext, EventId> {
 
     // Redirect gravity
 
-    // const gravityDir = new Three.Vector2(0, 1);
-    // gravityDir.rotateAround(new Three.Vector2(0, 0), this.planetRotation);
-    // this.physics.gravity.x = gravityDir.x;
-    // this.physics.gravity.y = gravityDir.y;
+    const gravityDir = new Three.Vector2(0, 1);
+    gravityDir.rotateAround(new Three.Vector2(0, 0), this.planetRotation);
+    gravityDir.normalize();
+    this.physics.gravity.x = gravityDir.x;
+    this.physics.gravity.y = gravityDir.y;
 
     // Click = jump!
 

@@ -50,7 +50,7 @@ export class World {
     console.debug("spawning entity", entityDesc);
 
     let angle = entityDesc.position * 2 * Math.PI;
-    let position = new Three.Vector2(0, state.planetRadius + 50);
+    let position = new Three.Vector2(0, state.planetRadius + 100);
     position.rotateAround(new Three.Vector2(0, 0), -angle);
 
     let entity: Entity;
@@ -65,11 +65,11 @@ export class World {
         break;
 
       case "tree":
-        entity = new Tree(position.x, position.y, 50, context);
+        entity = new Tree(position.x, position.y, 60, context);
         break;
 
       case "rock":
-        entity = new Rock(position.x, position.y, 50, context);
+        entity = new Rock(position.x, position.y, 20, context);
         break;
     }
 
@@ -77,7 +77,7 @@ export class World {
 
     state.scene.add(entity.model);
 
-    entity.physics.angle = angle;
+    Matter.Body.setAngle(entity.physics, angle);
     Matter.Composite.add(state.physics.world, [entity.physics]);
   }
 
@@ -126,7 +126,6 @@ export class World {
       entity.model.position.x = entity.physics.position.x;
       entity.model.position.y = -entity.physics.position.y;
       entity.model.rotation.z = -entity.physics.angle;
-      entity.physics.angle;
     }
   }
 }
