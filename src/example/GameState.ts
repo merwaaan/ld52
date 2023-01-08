@@ -179,8 +179,8 @@ export class GameState extends State<GameContext, EventId> {
         shipModel.traverse((child) => {
           if (child instanceof Three.Mesh) {
             child.material = new Three.MeshLambertMaterial({
-              color: 0xffff00,
-              emissive: 0x00a0af,
+              color: 0x404040,
+              emissive: 0x00404f,
             });
           }
         });
