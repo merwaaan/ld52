@@ -228,8 +228,8 @@ export class World {
     this.spawnedEntities = this.spawnedEntities.filter((entity) => {
       const cameraSpacePos = entity.model.position.clone();
       cameraSpacePos.project(state.camera);
-      //console.log(entity, cameraSpacePos);
-      const remove = cameraSpacePos.x < -1.2;
+
+      const remove = cameraSpacePos.x < -1.2 || entity.model.position.y < 0;
 
       if (remove) {
         this.despawn(entity, state);

@@ -108,6 +108,7 @@ export class Bullet extends Entity {
       //inverseMass: 1,
       collisionFilter: {
         category: bulletCollisionCat,
+        mask: bulletCollisionCat,
       },
       plugin: planetAttraction(),
     });

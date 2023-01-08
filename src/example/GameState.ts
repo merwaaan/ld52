@@ -15,6 +15,7 @@ import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
 import { barn, cow, house, tank, tree, World } from "./Worlds";
 import { Entity } from "./Entity";
+import { bulletCollisionCat } from "./physics";
 
 const shipParams = {
   accelFactor: 1.22,
@@ -45,6 +46,8 @@ export class GameState extends State<GameContext, EventId> {
   carModel: Three.Object3D | undefined;
 
   ship: Three.Object3D;
+  shipPhysics: Matter.Body;
+
   shipRay: Three.Mesh;
   shipRayPhysics: Matter.Body;
 
@@ -206,6 +209,28 @@ export class GameState extends State<GameContext, EventId> {
             });
           }
         });
+      });
+
+      this.shipPhysics = Matter.Bodies.rectangle(0, 0, 200, 100, {
+        isStatic: true,
+        isSensor: true,
+        collisionFilter: {
+          mask: bulletCollisionCat,
+          category: bulletCollisionCat,
+        },
+      });
+      Matter.Composite.add(this.physics.world, [this.shipPhysics]);
+
+      // React to bullet collisions
+
+      Matter.Events.on(this.physics, "collisionStart", (event) => {
+        const involvesShip = event.pairs.some(
+          (p) => p.bodyA == this.shipPhysics || p.bodyB == this.shipPhysics
+        );
+
+        if (involvesShip) {
+          console.log("hit!");
+        }
       });
     }
 
@@ -555,6 +580,8 @@ export class GameState extends State<GameContext, EventId> {
       this.planetRotation - this.rayHolder.rotation.z
     );
 
+    //
+
     if (this.attractedEntities.size > 0) {
       for (const entity of this.attractedEntities) {
         const bodyPos = new Three.Vector3(
@@ -602,6 +629,16 @@ export class GameState extends State<GameContext, EventId> {
     this.shipLife = clamp(this.shipLife, 0, 100);
     this.shipLifeBar.scale.y = this.shipLife / 100;
     this.shipLifeBar.position.x = -60 + (60 * this.shipLifeBar.scale.y);
+
+    // Sync ship physics
+
+    const worldShipPos = new Three.Vector3();
+    this.ship.getWorldPosition(worldShipPos);
+
+    Matter.Body.setPosition(this.shipPhysics, {
+      x: worldShipPos.x,
+      y: -worldShipPos.y,
+    });
 
     // const bodies = [
     //   this.conePhysics,
