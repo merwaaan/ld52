@@ -227,12 +227,19 @@ export class GameState extends State<GameContext, EventId> {
       // React to bullet collisions
 
       Matter.Events.on(this.physics, "collisionStart", (event) => {
-        const involvesShip = event.pairs.some(
+        const bulletCollisions = event.pairs.filter(
           (p) => p.bodyA == this.shipPhysics || p.bodyB == this.shipPhysics
         );
 
-        if (involvesShip) {
-          console.log("hit!");
+        if (bulletCollisions.length > 0) {
+          for (const pair of bulletCollisions) {
+            const bullet =
+              pair.bodyA == this.shipPhysics ? pair.bodyB : pair.bodyA;
+
+            this.shipLife -= 10;
+            const bulletEntity = this.world.lookupEntity(bullet);
+            if (bulletEntity) this.world.despawn(bulletEntity, this);
+          }
         }
       });
     }
