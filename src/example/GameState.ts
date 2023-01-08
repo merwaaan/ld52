@@ -31,6 +31,8 @@ const cameraVerticalOffset = 200;
 export class GameState extends State<GameContext, EventId> {
   scene: Three.Scene;
 
+  lastUpdateTime: number = 0;
+
   cameraPivot: Three.Group;
   camera: Three.Camera;
   //composer: EffectComposer;
@@ -317,6 +319,9 @@ export class GameState extends State<GameContext, EventId> {
   exit(context: GameContext) {}
 
   update(context: GameContext, doTransition: (eventId: EventId) => void) {
+    const dt = context.time - this.lastUpdateTime;
+    this.lastUpdateTime = context.time;
+
     // Rotate the camera
 
     const deltaRotation = this.planetSpeed; // TODO dt

@@ -1,8 +1,8 @@
-export function loop(update: () => void) {
-  function step() {
-    update();
+export function loop(update: (time: number) => void) {
+  function step(time: number) {
+    update(time);
     requestAnimationFrame(step);
   }
 
-  step();
+  step(0);
 }
