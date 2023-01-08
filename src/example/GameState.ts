@@ -363,22 +363,25 @@ export class GameState extends State<GameContext, EventId> {
     const accel = new Three.Vector2(0, 0);
 
     if (
-      context.inputs.isKeyDown("a") ||
+      context.inputs.isKeyDown("KeyA") ||
       context.inputs.isKeyDown("ArrowLeft")
     ) {
       accel.x = -1;
     }
     if (
-      context.inputs.isKeyDown("s") ||
+      context.inputs.isKeyDown("KeyD") ||
       context.inputs.isKeyDown("ArrowRight")
     ) {
       accel.x = +1;
     }
-    if (context.inputs.isKeyDown("w") || context.inputs.isKeyDown("ArrowUp")) {
+    if (
+      context.inputs.isKeyDown("KeyW") ||
+      context.inputs.isKeyDown("ArrowUp")
+    ) {
       accel.y = +1;
     }
     if (
-      context.inputs.isKeyDown("r") ||
+      context.inputs.isKeyDown("KeyS") ||
       context.inputs.isKeyDown("ArrowDown")
     ) {
       accel.y = -1;

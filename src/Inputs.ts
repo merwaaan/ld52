@@ -9,13 +9,13 @@ export class Inputs {
 
   constructor() {
     document.addEventListener("keydown", (event) => {
-      this._keysDown.add(event.key);
+      this._keysDown.add(event.code);
       event.preventDefault();
     });
 
     document.addEventListener("keyup", (event) => {
-      this._keysDown.delete(event.key);
-      this._keysUp.add(event.key);
+      this._keysDown.delete(event.code);
+      this._keysUp.add(event.code);
       event.preventDefault();
     });
 
