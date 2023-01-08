@@ -9,8 +9,8 @@ export class Cow extends Entity {
   model: Three.Object3D;
   physics: Matter.Body;
 
-  mixer: Three.AnimationMixer;
-  idleAction: Three.AnimationAction | null;
+  mixer?: Three.AnimationMixer;
+  idleAction?: Three.AnimationAction;
 
   constructor(x: number, y: number, context: GameContext) {
     super();
@@ -18,20 +18,6 @@ export class Cow extends Entity {
     this.model = new Three.Group();
 
     const scale = 25;
-
-    const cowModel = context.assets.model("cow").clone();
-    cowModel.translateY(-scale / 2);
-    cowModel.scale.set(scale, scale, scale);
-
-    cowModel.traverse((child) => {
-      if (child instanceof Three.Mesh) {
-        child.material = new Three.MeshBasicMaterial({
-          color: 0xff0000,
-        });
-      }
-    });
-
-    this.model.add(cowModel);
 
     this.physics = Matter.Bodies.rectangle(x, -y, scale, scale, {
       //isStatic: true,
@@ -43,17 +29,36 @@ export class Cow extends Entity {
         inverseMass: 1,
     });
 
-    // Anim
+    context.assets.onReady((assets) => {
+      const cowModel = context.assets.model("cow").clone();
+      cowModel.translateY(-scale / 2);
+      cowModel.scale.set(scale, scale, scale);
 
-    this.mixer = new Three.AnimationMixer(cowModel);
-    const idleClip = Three.AnimationClip.findByName(cowModel.animations, "eat");
+      cowModel.traverse((child) => {
+        if (child instanceof Three.Mesh) {
+          child.material = new Three.MeshBasicMaterial({
+            color: 0xff0000,
+          });
+        }
+      });
 
-    this.idleAction = this.mixer.clipAction(idleClip);
-    this.idleAction?.play();
+      this.model.add(cowModel);
+
+      // Anim
+
+      this.mixer = new Three.AnimationMixer(cowModel);
+      const idleClip = Three.AnimationClip.findByName(
+        cowModel.animations,
+        "eat"
+      );
+
+      this.idleAction = this.mixer.clipAction(idleClip);
+      this.idleAction?.play();
+    });
   }
 
   update() {
-    this.mixer.update(1 / 60);
+    this.mixer?.update(1 / 60);
   }
 
   grab(): void {

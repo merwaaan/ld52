@@ -11,6 +11,7 @@ import { Rock } from "./Rock";
 import { Barn } from "./Barn";
 import { weightedRandom } from "../utils";
 import { Tank } from "./Tank";
+import { Human } from "./Human";
 
 type EntityDesc = {
   position: number;
@@ -25,6 +26,7 @@ type EntityDesc = {
   | { type: "tank" }
   | { type: "tree" }
   | { type: "bigTree" }
+  | { type: "human" }
 );
 
 //
@@ -39,6 +41,10 @@ export function cow(x: number): EntityDesc {
 
 export function house(x: number): EntityDesc {
   return { type: "house", position: x };
+}
+
+export function human(x: number): EntityDesc {
+  return { type: "human", position: x };
 }
 
 export function tank(x: number): EntityDesc {
@@ -120,6 +126,7 @@ export class World {
         [cow, 40],
         [barn, 3],
         [tank, 5],
+        [human, 5],
       ];
     } else if (t < 1) {
       //console.log("level 2");
@@ -174,15 +181,17 @@ export class World {
     state.scene.add(entity.model);
 
     //Matter.Body.setAngle(entity.physics, angle);
-    Matter.Composite.add(state.physics.world, [entity.physics]);
+    Matter.Composite.add(state.physics.world, [
+      entity.physics,
+      ...entity.otherPhysics,
+    ]);
   }
 
   spawn(entityDesc: EntityDesc, state: GameState, context: GameContext) {
     //console.debug("spawning entity", entityDesc);
 
-    let angle = entityDesc.position * 2 * Math.PI;
-    let position = new Three.Vector2(0, state.planetRadius + 10);
-    position.rotateAround(new Three.Vector2(0, 0), -angle);
+    let angle = cyclesToAngle(entityDesc.position);
+    let position = angleToWorldSpace(angle, state.planetRadius);
 
     let entity: Entity;
 
@@ -195,6 +204,9 @@ export class World {
         break;
       case "house":
         entity = new House(position.x, position.y, 50);
+        break;
+      case "human":
+        entity = new Human(position.x, position.y, context, state);
         break;
       case "tank":
         entity = new Tank(position.x, position.y, context);
@@ -223,7 +235,10 @@ export class World {
     state.scene.add(entity.model);
 
     Matter.Body.setAngle(entity.physics, angle);
-    Matter.Composite.add(state.physics.world, [entity.physics]);
+    Matter.Composite.add(state.physics.world, [
+      entity.physics,
+      ...entity.otherPhysics,
+    ]);
   }
 
   despawn(entity: Entity, state: GameState) {
@@ -292,4 +307,16 @@ export class World {
   entityFromPhysics(physics: Matter.Body) {
     return this.spawnedEntities.find((entity) => entity.physics == physics);
   }
+}
+
+export function cyclesToAngle(cycles: number) {
+  return cycles * 2 * Math.PI;
+}
+
+export function angleToWorldSpace(
+  angle: number,
+  planetRadius: number
+): Three.Vector2 {
+  let position = new Three.Vector2(0, planetRadius + 10);
+  return position.rotateAround(new Three.Vector2(0, 0), -angle);
 }

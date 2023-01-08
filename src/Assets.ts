@@ -76,6 +76,7 @@ export class Assets<TAssets extends AssetList> {
         });
       } else if (path.includes("glb")) {
         new GLTFLoader(manager).load(path, (gltf) => {
+          //console.log(gltf);
           gltf.scene.animations = gltf.animations; // Attach animations
           this._models[id as keyof TAssets["models"]] = gltf.scene;
           this.checkAllLoaded();
@@ -109,7 +110,7 @@ export class Assets<TAssets extends AssetList> {
   onReady(callback: OnReadyCallback<Assets<TAssets>>) {
     // Already loaded: call immediately
     if (this._loaded) {
-      this._onReadyCallbacks.forEach((callback) => callback(this));
+      callback(this);
     }
     // Otherwise, will be called later
     {
