@@ -30,3 +30,22 @@ export function clamp(x: number, min: number, max: number) {
 export function randomBetween(min: number, max: number): number {
   return min + (max - min) * Math.random();
 }
+
+export function weightedRandom(array: [any, number][]): any {
+  const psums = [];
+  let pTotal = 0;
+
+  for (const [_, p] of array) {
+    pTotal += p;
+    psums.push(pTotal);
+  }
+
+  const c = Math.random() * 100;
+
+  for (let i=0; i < psums.length; ++i) {
+    if (c < psums[i])
+      return array[i][0];
+  }
+
+  return undefined;
+}

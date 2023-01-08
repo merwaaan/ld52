@@ -31,13 +31,15 @@ export class Rock extends Entity {
 
     this.model.add(rockModel);
 
+    const isStatic = size > 30;
+
     this.physics = Matter.Bodies.rectangle(
       x,
       -y,
       horizontalScale,
       verticalScale,
       {
-        //isStatic: true,
+        isStatic: isStatic,
         //isSensor: true,
         //isSleeping: true,
         friction: 1,

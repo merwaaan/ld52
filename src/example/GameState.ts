@@ -11,7 +11,7 @@ import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
-import { barn, cow, house, rock, tree, World } from "./Worlds";
+import { World } from "./Worlds";
 import { Entity } from "./Entity";
 
 const shipParams = {
@@ -170,7 +170,8 @@ export class GameState extends State<GameContext, EventId> {
           color: layerColors[layer],
         });
         const mesh = new Three.Mesh(geometry, material);
-        mesh.position.z = -layer;
+        // Move back layers to avoid clipping with entities geometry
+        mesh.position.z = -(layer + 1) * 1000;
         this.scene.add(mesh);
       }
     }

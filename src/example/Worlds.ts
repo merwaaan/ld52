@@ -9,6 +9,7 @@ import { GameContext } from "./test";
 import { Tree } from "./Tree";
 import { Rock } from "./Rock";
 import { Barn } from "./Barn";
+import { weightedRandom } from "../utils";
 
 type EntityDesc = {
   position: number;
@@ -16,8 +17,11 @@ type EntityDesc = {
   | { type: "barn" }
   | { type: "cow" }
   | { type: "house" }
-  | { type: "rock" }
+  | { type: "smallRock" }
+  | { type: "medRock" }
+  | { type: "bigRock" }
   | { type: "tree" }
+  | { type: "bigTree" }
 );
 
 //
@@ -33,12 +37,25 @@ export function cow(x: number): EntityDesc {
 export function house(x: number): EntityDesc {
   return { type: "house", position: x };
 }
+
 export function tree(x: number): EntityDesc {
   return { type: "tree", position: x };
 }
 
-export function rock(x: number): EntityDesc {
-  return { type: "rock", position: x };
+export function bigTree(x: number): EntityDesc {
+  return { type: "bigTree", position: x };
+}
+
+export function smallRock(x: number): EntityDesc {
+  return { type: "smallRock", position: x };
+}
+
+export function medRock(x: number): EntityDesc {
+  return { type: "medRock", position: x };
+}
+
+export function bigRock(x: number): EntityDesc {
+  return { type: "bigRock", position: x };
 }
 
 // World
@@ -73,17 +90,31 @@ export class World {
     //   rock(0.09),
     //   tree(0.1),
     // ];
+    // this.entitiesToSpawn = desc;
 
     this.entitiesToSpawn = this.generateNewEntities(-0.05);
   }
 
-  generateNewEntities(t: number) : EntityDesc[] {
+  generateNewEntities(t: number): EntityDesc[] {
     let desc = [];
     const tInc = 0.01;
 
-    let stop = 10;
+    const p: [any, number][] = [
+      [smallRock, 15],
+      [medRock, 10],
+      [bigRock, 3],
+      [tree, 13],
+      [bigTree, 2],
+      [cow, 40],
+      [barn, 5],
+    ];
+
+    let stop = t + 1;
     while (t < stop) {
-      desc.push(rock(t));
+      const f = weightedRandom(p);
+      if (f) {
+        desc.push(f(t));
+      }
       t += tInc;
     }
 
@@ -101,7 +132,7 @@ export class World {
     console.debug("spawning entity", entityDesc);
 
     let angle = entityDesc.position * 2 * Math.PI;
-    let position = new Three.Vector2(0, state.planetRadius + 100);
+    let position = new Three.Vector2(0, state.planetRadius + 10);
     position.rotateAround(new Three.Vector2(0, 0), -angle);
 
     let entity: Entity;
@@ -119,8 +150,17 @@ export class World {
       case "tree":
         entity = new Tree(position.x, position.y, 60, context);
         break;
-      case "rock":
-        entity = new Rock(position.x, position.y, 20, context);
+      case "bigTree":
+        entity = new Tree(position.x, position.y, 120, context);
+        break;
+      case "smallRock":
+        entity = new Rock(position.x, position.y, 10, context);
+        break;
+      case "medRock":
+        entity = new Rock(position.x, position.y, 25, context);
+        break;
+      case "bigRock":
+        entity = new Rock(position.x, position.y, 40, context);
         break;
     }
 
@@ -152,6 +192,11 @@ export class World {
     ) {
       const entityDesc = this.entitiesToSpawn.shift()!;
       this.spawn(entityDesc, state, context);
+
+      if (this.entitiesToSpawn.length == 0) {
+        for (const e of this.generateNewEntities(entityDesc.position))
+          this.entitiesToSpawn.push(e);
+      }
     }
 
     // Remove old entities
@@ -160,7 +205,7 @@ export class World {
       const cameraSpacePos = entity.model.position.clone();
       cameraSpacePos.project(state.camera);
 
-      const remove = cameraSpacePos.x < -1.2 || cameraSpacePos.x > 1.2;
+      const remove = cameraSpacePos.x < -1.2;
 
       if (remove) {
         this.despawn(entity, state);

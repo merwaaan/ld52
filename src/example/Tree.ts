@@ -22,13 +22,15 @@ export class Tree extends Entity {
     treeModel.scale.set(horizontalScale, verticalScale, horizontalScale);
     this.model.add(treeModel);
 
+    const isStatic = size > 100;
+
     this.physics = Matter.Bodies.rectangle(
       x,
       -y,
       horizontalScale,
       verticalScale,
       {
-        //isStatic: true,
+        isStatic: isStatic,
         friction: 1,
         frictionAir: 0.01,
         mass: 1,
