@@ -16,7 +16,8 @@ const shipParams = {
   accelFactor: 0.3,
   maxSpeed: 5,
   friction: 0.93,
-  slantFactor: 0.05,
+  slantFactorX: 0.05,
+  slantFactorY: 0.05,
 
   rayMaxAngle: 0.2,
   rayAngleSpeedFactor: 0.1,
@@ -71,7 +72,8 @@ export class GameState extends State<GameContext, EventId> {
     shipOptions.add(shipParams, "accelFactor", 0, 1);
     shipOptions.add(shipParams, "maxSpeed", 0, 6);
     shipOptions.add(shipParams, "friction", 0.85, 1);
-    shipOptions.add(shipParams, "slantFactor", 0, 0.1);
+    shipOptions.add(shipParams, "slantFactorX", 0, 0.1);
+    shipOptions.add(shipParams, "slantFactorY", 0, 0.1);
 
     const beamOptions = context.gui.addFolder("Beam");
     beamOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
@@ -426,8 +428,10 @@ export class GameState extends State<GameContext, EventId> {
       shipBoundsY[1]
     );
 
-    const shipAngle = this.shipVelocity.x * -shipParams.slantFactor;
-    this.ship.rotation.z = shipAngle;
+    const shipAngleX = this.shipVelocity.x * -shipParams.slantFactorX;
+    this.ship.rotation.z = shipAngleX;
+    const shipAngleY = this.shipVelocity.y * -shipParams.slantFactorY;
+    this.ship.rotation.x = shipAngleY;
 
     // Move ray
     if (context.inputs.isButtonClicked(0)) {
@@ -483,7 +487,7 @@ export class GameState extends State<GameContext, EventId> {
         Math.PI * (2 - shipParams.rayMaxAngle)
       );
       // Adjust for initial angle + ship slant offset
-      rayAngle += Math.PI / 2 - shipAngle;
+      rayAngle += Math.PI / 2 - shipAngleX;
 
       // Clamp rotation speed
       let dt = rayAngle - this.rayHolder.rotation.z;

@@ -41,6 +41,14 @@ export class Inputs {
     return this._cursorPosition;
   }
 
+  isButtonDown(button: number): boolean {
+    return this._mouseButtonsDown.has(button);
+  }
+
+  isButtonup(button: number): boolean {
+    return this._mouseButtonsUp.has(button);
+  }
+
   isButtonClicked(button: number): [number, number] | null {
     // position | null
     return this._mouseButtonsUp.has(button) ? this._cursorPosition : null;
