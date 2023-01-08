@@ -127,7 +127,11 @@ export class World {
 
       return !remove;
     });
+
+    // Update
+
     for (const entity of this.spawnedEntities) {
+      entity.update();
     }
 
     // Sync physics and models
@@ -137,5 +141,9 @@ export class World {
       entity.model.position.y = -entity.physics.position.y;
       entity.model.rotation.z = -entity.physics.angle;
     }
+  }
+
+  entityFromPhysics(physics: Matter.Body) {
+    return this.spawnedEntities.find((entity) => entity.physics == physics);
   }
 }

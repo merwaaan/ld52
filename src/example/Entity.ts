@@ -6,4 +6,7 @@ export abstract class Entity {
   abstract physics: Matter.Body;
 
   abstract update(): void;
+
+  grab(): void {}
+  release(): void {}
 }

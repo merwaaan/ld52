@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 type AudioBuffer = NonNullable<THREE.Audio["buffer"]>;
 
@@ -15,9 +16,13 @@ type OnReadyCallback<TAssets> = (assets: TAssets) => void;
 export class Assets<TAssets extends AssetList> {
   private _assetList: TAssets;
 
-  private _models: { [key in keyof TAssets["models"]]: THREE.Object3D } = {} as { [key in keyof TAssets["models"]]: THREE.Object3D };
-  private _textures: { [key in keyof TAssets["textures"]]: THREE.Texture } = {} as { [key in keyof TAssets["textures"]]: THREE.Texture };
-  private _sounds: { [key in keyof TAssets["sounds"]]: AudioBuffer } = {}as { [key in keyof TAssets["sounds"]]: AudioBuffer };
+  private _models: { [key in keyof TAssets["models"]]: THREE.Object3D } =
+    {} as { [key in keyof TAssets["models"]]: THREE.Object3D };
+  private _textures: { [key in keyof TAssets["textures"]]: THREE.Texture } =
+    {} as { [key in keyof TAssets["textures"]]: THREE.Texture };
+  private _sounds: { [key in keyof TAssets["sounds"]]: AudioBuffer } = {} as {
+    [key in keyof TAssets["sounds"]]: AudioBuffer;
+  };
 
   private _loaded: boolean = false;
   private _onReadyCallbacks: OnReadyCallback<Assets<TAssets>>[] = [];
@@ -49,9 +54,19 @@ export class Assets<TAssets extends AssetList> {
     // Models
 
     Object.entries(this._assetList["models"] ?? {}).forEach(([id, path]) => {
-      new OBJLoader(manager).load(path, (object) => {
-        this._models[id as keyof TAssets["models"]] = object;
-      });
+      console.log(id, path);
+      if (path.includes(".obj")) {
+        new OBJLoader(manager).load(path, (object) => {
+          this._models[id as keyof TAssets["models"]] = object;
+        });
+      } else if (path.includes("glb")) {
+        new GLTFLoader(manager).load(path, (gltf) => {
+          gltf.scene.animations = gltf.animations; // Attach animations
+          this._models[id as keyof TAssets["models"]] = gltf.scene;
+        });
+      } else {
+        throw new Error(`Unknown extension: ${path}`);
+      }
     });
 
     // Textures

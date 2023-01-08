@@ -11,6 +11,7 @@ import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
 import { barn, cow, house, rock, tree, World } from "./Worlds";
+import { Entity } from "./Entity";
 
 const shipParams = {
   accelFactor: 1.22,
@@ -55,7 +56,7 @@ export class GameState extends State<GameContext, EventId> {
 
   shipVelocity: Three.Vector2;
   shipIsGrabbing: boolean = false;
-  attractedBodies: Set<Matter.Body> = new Set();
+  attractedEntities: Set<Entity> = new Set();
 
   world: World = new World([
     rock(-0.03),
@@ -249,7 +250,6 @@ export class GameState extends State<GameContext, EventId> {
       Matter.Composite.add(this.physics.world, this.shipRayPhysics);
 
       Matter.Events.on(this.physics, "collisionStart", (event) => {
-        //console.log(event.pairs[0]);
         const rayCollisions = event.pairs.filter(
           (p) =>
             p.bodyA == this.shipRayPhysics || p.bodyB == this.shipRayPhysics
@@ -260,7 +260,11 @@ export class GameState extends State<GameContext, EventId> {
             const other =
               pair.bodyA == this.shipRayPhysics ? pair.bodyB : pair.bodyA;
 
-            this.attractedBodies.add(other);
+            const entity = this.world.entityFromPhysics(other);
+            if (entity) {
+              this.attractedEntities.add(entity);
+              entity.grab();
+            }
           }
         }
       });
@@ -277,7 +281,12 @@ export class GameState extends State<GameContext, EventId> {
               pair.bodyA == this.shipRayPhysics ? pair.bodyB : pair.bodyA;
 
             other.frictionAir = 0.01;
-            this.attractedBodies.delete(other);
+
+            const entity = this.world.entityFromPhysics(other);
+            if (entity) {
+              this.attractedEntities.delete(entity);
+              entity.release();
+            }
           }
         }
       });
@@ -535,9 +544,13 @@ export class GameState extends State<GameContext, EventId> {
       this.planetRotation - this.rayHolder.rotation.z
     );
 
-    if (this.attractedBodies.size > 0) {
-      for (const body of this.attractedBodies) {
-        const bodyPos = new Three.Vector3(body.position.x, -body.position.y, 0);
+    if (this.attractedEntities.size > 0) {
+      for (const entity of this.attractedEntities) {
+        const bodyPos = new Three.Vector3(
+          entity.physics.position.x,
+          -entity.physics.position.y,
+          0
+        );
 
         const shipPos = coneWorldPos.clone();
         shipPos.z = 0;
@@ -547,15 +560,15 @@ export class GameState extends State<GameContext, EventId> {
         bodyToShip.multiplyScalar(shipParams.beamForce);
 
         if (this.shipIsGrabbing) {
-          body.frictionAir = 1;
+          entity.physics.frictionAir = 1;
 
           Matter.Body.applyForce(
-            body,
-            body.position,
+            entity.physics,
+            entity.physics.position,
             Matter.Vector.create(bodyToShip.x, -bodyToShip.y)
           );
         } else {
-          body.frictionAir = 0.01;
+          entity.physics.frictionAir = 0.01;
         }
       }
     }
