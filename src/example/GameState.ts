@@ -150,16 +150,19 @@ export class GameState extends State<GameContext, EventId> {
         const divs = 200;
         let step = (2 * Math.PI) / divs;
 
-        shape.moveTo(0, 0);
         for (let i = 0; i < divs; ++i) {
           const sample = i * (layer + 1) * 0.2;
           const height = layerHeight + layerHeightDelta * noise(sample, 0);
 
-          shape.lineTo(
-            height * Math.cos(i * step),
-            height * Math.sin(i * step)
-          );
+          const x = height * Math.cos(i * step);
+          const y = height * Math.sin(i * step);
+          if (i == 0) {
+            shape.moveTo(x, y);
+          } else {
+            shape.lineTo(x, y);
+          }
         }
+        shape.closePath();
 
         const geometry = new Three.ShapeGeometry(shape);
         const material = new Three.MeshBasicMaterial({
