@@ -29,6 +29,10 @@ export class Tree extends Entity {
       verticalScale,
       {
         //isStatic: true,
+        friction: 1,
+        frictionAir: 0.01,
+        mass: 1,
+        inverseMass: 1,
       }
     );
   }

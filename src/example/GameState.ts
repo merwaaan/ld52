@@ -24,6 +24,8 @@ const shipParams = {
   attractRayOffScale: 0.1,
   beamOpenSpeed: 320,
   beamCloseSpeed: 160,
+
+  beamForce: 0.016,
 };
 
 const cameraVerticalOffset = 200;
@@ -57,9 +59,24 @@ export class GameState extends State<GameContext, EventId> {
 
   world: World = new World([
     rock(-0.03),
+    rock(-0.027),
+    rock(-0.025),
+    rock(-0.023),
+    rock(-0.021),
+    rock(-0.017),
+    rock(-0.015),
+    rock(-0.012),
+    rock(-0.002),
     tree(0),
     cow(0.03),
     barn(0.05),
+    tree(0.01),
+    rock(0.012),
+    rock(0.015),
+    tree(0.025),
+    tree(0.028),
+    rock(0.03),
+    tree(0.06),
     tree(0.08),
     rock(0.09),
     tree(0.1),
@@ -81,6 +98,9 @@ export class GameState extends State<GameContext, EventId> {
     beamOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
     beamOptions.add(shipParams, "beamOpenSpeed", 0, 500);
     beamOptions.add(shipParams, "beamCloseSpeed", 0, 500);
+
+    const physicsOptions = context.gui.addFolder("Physics");
+    physicsOptions.add(shipParams, "beamForce", 0, 0.02);
 
     // Setup scene
 
@@ -256,6 +276,7 @@ export class GameState extends State<GameContext, EventId> {
             const other =
               pair.bodyA == this.shipRayPhysics ? pair.bodyB : pair.bodyA;
 
+            other.frictionAir = 0.01;
             this.attractedBodies.delete(other);
           }
         }
@@ -523,13 +544,19 @@ export class GameState extends State<GameContext, EventId> {
 
         const bodyToShip = shipPos.sub(bodyPos);
         bodyToShip.normalize();
-        bodyToShip.multiplyScalar(0.003);
+        bodyToShip.multiplyScalar(shipParams.beamForce);
 
-        Matter.Body.applyForce(
-          body,
-          body.position,
-          Matter.Vector.create(bodyToShip.x, -bodyToShip.y)
-        );
+        if (this.shipIsGrabbing) {
+          body.frictionAir = 1;
+
+          Matter.Body.applyForce(
+            body,
+            body.position,
+            Matter.Vector.create(bodyToShip.x, -bodyToShip.y)
+          );
+        } else {
+          body.frictionAir = 0.01;
+        }
       }
     }
 

@@ -40,6 +40,10 @@ export class Rock extends Entity {
         //isStatic: true,
         //isSensor: true,
         //isSleeping: true,
+        friction: 1,
+        frictionAir: 0.01,
+        mass: 1,
+        inverseMass: 1,
       }
     );
   }
