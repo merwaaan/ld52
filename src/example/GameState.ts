@@ -51,14 +51,13 @@ export class GameState extends State<GameContext, EventId> {
   attractedBodies: Set<Matter.Body> = new Set();
 
   world: World = new World([
-    tree(0),
-    rock(-0.02),
-    // house(0),
-    // house(0.03),
-    // cow(0.06),
-    // cow(0.08),
-    // cow(0.09),
-    // cow(0.1),
+    rock(-0.03),
+    rock(0),
+    rock(0.03),
+    tree(0.06),
+    tree(0.08),
+    rock(0.09),
+    tree(0.1),
   ]);
 
   constructor(context: GameContext) {

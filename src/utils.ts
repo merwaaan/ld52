@@ -22,10 +22,11 @@ export function computeNormalizedPosition(
 }
 
 export function clamp(x: number, min: number, max: number) {
-  if (x < min)
-    return min;
-  else if (x > max)
-    return max;
-  else
-    return x;
+  if (x < min) return min;
+  else if (x > max) return max;
+  else return x;
+}
+
+export function randomBetween(min: number, max: number): number {
+  return min + (max - min) * Math.random();
 }
