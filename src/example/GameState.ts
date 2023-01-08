@@ -229,7 +229,7 @@ export class GameState extends State<GameContext, EventId> {
       Matter.Composite.add(this.physics.world, this.shipRayPhysics);
 
       Matter.Events.on(this.physics, "collisionStart", (event) => {
-        console.log(event.pairs[0]);
+        //console.log(event.pairs[0]);
         const rayCollisions = event.pairs.filter(
           (p) =>
             p.bodyA == this.shipRayPhysics || p.bodyB == this.shipRayPhysics
@@ -273,7 +273,7 @@ export class GameState extends State<GameContext, EventId> {
       spotLight.angle = Math.PI / 6;
       spotLight.intensity = 0.5;
       spotLight.penumbra = 0.2;
-      spotLight.position.set(0, 0, 60);
+      //spotLight.position.set(0, 0, 60);
       spotLight.castShadow = true;
       this.ship.add(spotLight);
     }
@@ -285,7 +285,7 @@ export class GameState extends State<GameContext, EventId> {
       spotLight.penumbra = 0.8;
       spotLight.target = new Three.Object3D();
       spotLight.target.position.y = -200;
-      spotLight.target.position.z = 30;
+      //spotLight.target.position.z = 30;
       spotLight.castShadow = true;
       this.tractorBeamLight = spotLight;
       this.rayHolder.add(spotLight.target);
