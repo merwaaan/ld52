@@ -9,7 +9,7 @@ import { World } from "./Worlds";
 import { bulletCollisionCat } from "./physics";
 
 function delay() {
-  return randomBetween(3, 6);
+  return randomBetween(1, 3);
 }
 
 export class Tank extends Entity {

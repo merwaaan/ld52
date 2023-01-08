@@ -36,6 +36,11 @@ export class Cow extends Entity {
     this.physics = Matter.Bodies.rectangle(x, -y, scale, scale, {
       //isStatic: true,
       plugin: planetAttraction(),
+
+        friction: 1,
+        frictionAir: 0.01,
+        mass: 1,
+        inverseMass: 1,
     });
 
     // Anim

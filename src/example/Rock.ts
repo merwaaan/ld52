@@ -9,6 +9,8 @@ export class Rock extends Entity {
   model: Three.Object3D;
   physics: Matter.Body;
 
+  size: number;
+
   constructor(x: number, y: number, size: number, context: GameContext) {
     super();
 
@@ -18,6 +20,7 @@ export class Rock extends Entity {
 
     const horizontalScale = size * randomBetween(0.7, 1.6);
     const verticalScale = size * randomBetween(0.7, 1.6);
+    this.size = size;
 
     rockModel.translateY(-verticalScale / 2);
 

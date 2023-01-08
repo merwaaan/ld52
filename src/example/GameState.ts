@@ -19,6 +19,7 @@ import { bulletCollisionCat } from "./physics";
 import { Cow } from "./Cow";
 import { Rock } from "./Rock";
 import { Tree } from "./Tree";
+import { Tank } from "./Tank";
 
 const shipParams = {
   accelFactor: 1.22,
@@ -62,7 +63,7 @@ export class GameState extends State<GameContext, EventId> {
   physicsRenderer: Matter.Render;
 
   planetRadius: number = 1000;
-  planetSpeed: number = 0.0005;
+  planetSpeed: number = 0.002;
   planetRotation: number = 0;
 
   shipVelocity: Three.Vector2;
@@ -626,8 +627,15 @@ export class GameState extends State<GameContext, EventId> {
             } else if (entity instanceof Tree) {
               this.shipLife += 1;
             } else if (entity instanceof Rock) {
-              this.shipLife -= 1;
+              if (entity.size >= 20)
+                this.shipLife -= 10;
+              else
+                this.shipLife -= 5;
             }
+            else if (entity instanceof Tank) {
+              this.shipLife -= 8;
+            }
+
           } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
             const scale = distanceToShip / shipParams.shipSlurpDistance;

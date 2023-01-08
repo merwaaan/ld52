@@ -106,18 +106,48 @@ export class World {
     let desc = [];
     const tInc = 0.01;
 
-    const p: [any, number][] = [
-      [smallRock, 15],
-      [medRock, 10],
-      [bigRock, 3],
-      [tree, 13],
-      [bigTree, 2],
-      [cow, 40],
-      [barn, 3],
-      [tank, 5],
-    ];
+    console.log("genlevel", t);
 
-    let stop = t + 1;
+    let p: [any, number][];
+    if (t < 0.5) {
+      //console.log("level 1");
+      p = [
+        [smallRock, 15],
+        [medRock, 10],
+        [bigRock, 3],
+        [tree, 13],
+        [bigTree, 2],
+        [cow, 40],
+        [barn, 3],
+        [tank, 5],
+      ];
+    } else if (t < 1) {
+      //console.log("level 2");
+      p = [
+        [smallRock, 15],
+        [medRock, 10],
+        [bigRock, 3],
+        [tree, 13],
+        [bigTree, 2],
+        [cow, 30],
+        [barn, 3],
+        [tank, 10],
+      ];
+    } else {
+      //console.log("level 3");
+      p = [
+        [smallRock, 10],
+        [medRock, 15],
+        [bigRock, 3],
+        [tree, 10],
+        [bigTree, 5],
+        [cow, 20],
+        [barn, 2],
+        [tank, 20],
+      ];
+    }
+
+    let stop = t + 0.4;
     while (t < stop) {
       const f = weightedRandom(p);
       if (f) {
@@ -223,13 +253,27 @@ export class World {
       }
     }
 
+    // Sync physics and models
+
+    for (const entity of this.spawnedEntities) {
+      entity.model.position.x = entity.physics.position.x;
+      entity.model.position.y = -entity.physics.position.y;
+      entity.model.rotation.z = -entity.physics.angle;
+    }
+
     // Remove old entities
 
     this.spawnedEntities = this.spawnedEntities.filter((entity) => {
       const cameraSpacePos = entity.model.position.clone();
       cameraSpacePos.project(state.camera);
 
-      const remove = cameraSpacePos.x < -1.2 || entity.model.position.y < 0;
+      const nearPlanetCenter =
+        entity.model.position.y < 100 &&
+        entity.model.position.y > -100 &&
+        entity.model.position.x < 100 &&
+        entity.model.position.x > -100;
+
+      const remove = cameraSpacePos.x < -1.2 || nearPlanetCenter;
 
       if (remove) {
         this.despawn(entity, state);
@@ -242,14 +286,6 @@ export class World {
 
     for (const entity of this.spawnedEntities) {
       entity.update(state, this);
-    }
-
-    // Sync physics and models
-
-    for (const entity of this.spawnedEntities) {
-      entity.model.position.x = entity.physics.position.x;
-      entity.model.position.y = -entity.physics.position.y;
-      entity.model.rotation.z = -entity.physics.angle;
     }
   }
 
