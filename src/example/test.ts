@@ -26,7 +26,6 @@ const assets = new Assets({
 // Setup game
 
 export type GameContext = {
-  time: number,
   renderer: THREE.WebGLRenderer;
   inputs: Inputs;
   gui: dat.GUI;
@@ -34,7 +33,6 @@ export type GameContext = {
 };
 
 const gameContext: GameContext = {
-  time: 0,
   renderer: new THREE.WebGLRenderer({ antialias: true }),
   inputs: new Inputs(),
   gui: new dat.GUI(),
@@ -72,9 +70,8 @@ const g_stats = new Stats();
 g_stats.showPanel(1);
 document.body.appendChild(g_stats.dom);
 
-loop((time: number) => {
+loop(() => {
   g_stats.begin();
-  gameContext.time = time;
   machine.update(gameContext);
   gameContext.inputs.update();
   g_stats.end();

@@ -13,14 +13,14 @@ import { House } from "./House";
 import { cow, house, rock, tree, World } from "./Worlds";
 
 const shipParams = {
-  accelFactor: 0.3,
-  maxSpeed: 5,
-  friction: 0.93,
-  slantFactorX: 0.05,
-  slantFactorY: 0.05,
+  accelFactor: 1.22,
+  maxSpeed: 14,
+  friction: 0.9,
+  slantFactorX: 0.028,
+  slantFactorY: 0.031,
 
   rayMaxAngle: 0.2,
-  rayAngleSpeedFactor: 0.1,
+  rayAngleSpeedFactor: 0.3,
   attractRayOffScale: 0.1,
   beamOpenSpeed: 320,
   beamCloseSpeed: 160,
@@ -30,8 +30,6 @@ const cameraVerticalOffset = 200;
 
 export class GameState extends State<GameContext, EventId> {
   scene: Three.Scene;
-
-  lastUpdateTime: number = 0;
 
   cameraPivot: Three.Group;
   camera: Three.Camera;
@@ -71,15 +69,15 @@ export class GameState extends State<GameContext, EventId> {
     super();
 
     const shipOptions = context.gui.addFolder("Ship");
-    shipOptions.add(shipParams, "accelFactor", 0, 1);
-    shipOptions.add(shipParams, "maxSpeed", 0, 6);
+    shipOptions.add(shipParams, "accelFactor", 0, 2);
+    shipOptions.add(shipParams, "maxSpeed", 0, 20);
     shipOptions.add(shipParams, "friction", 0.85, 1);
     shipOptions.add(shipParams, "slantFactorX", 0, 0.1);
     shipOptions.add(shipParams, "slantFactorY", 0, 0.1);
 
     const beamOptions = context.gui.addFolder("Beam");
     beamOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
-    beamOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
+    beamOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.3);
     beamOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
     beamOptions.add(shipParams, "beamOpenSpeed", 0, 500);
     beamOptions.add(shipParams, "beamCloseSpeed", 0, 500);
@@ -322,9 +320,6 @@ export class GameState extends State<GameContext, EventId> {
   exit(context: GameContext) {}
 
   update(context: GameContext, doTransition: (eventId: EventId) => void) {
-    const dt = context.time - this.lastUpdateTime;
-    this.lastUpdateTime = context.time;
-
     // Rotate the camera
 
     const deltaRotation = this.planetSpeed; // TODO dt
@@ -505,6 +500,7 @@ export class GameState extends State<GameContext, EventId> {
         shipParams.rayAngleSpeedFactor
       );
       this.rayHolder.rotation.z += d;
+      this.rayHolder.rotation.x = -shipAngleY;
     }
 
     const coneWorldPos = new Three.Vector3();
@@ -547,7 +543,7 @@ export class GameState extends State<GameContext, EventId> {
     // Update
 
     TWEEN.update();
-    Matter.Engine.update(this.physics, dt);
+    Matter.Engine.update(this.physics, 1000 / 60);
     this.world.update(this, context);
 
     // Render
