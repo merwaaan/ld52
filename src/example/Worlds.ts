@@ -113,8 +113,9 @@ export class World {
       [tree, 13],
       [bigTree, 2],
       [cow, 40],
-      [barn, 5],
+      [barn, 3],
       [tank, 5],
+      [barn, 3],
     ];
 
     let stop = t + 1;

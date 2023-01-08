@@ -65,6 +65,10 @@ export class GameState extends State<GameContext, EventId> {
 
   world: World = new World();
 
+  shipLife: number = 100;
+  shipLifeDownFactor: number = 0.1;
+  shipLifeBar: Three.Mesh;
+
   constructor(context: GameContext) {
     super();
 
@@ -86,6 +90,9 @@ export class GameState extends State<GameContext, EventId> {
     physicsOptions.add(shipParams, "beamForce", 0, 0.02);
     physicsOptions.add(shipParams, "shipSlurpDistance", 0, 500);
     physicsOptions.add(shipParams, "shipDespawnDistance", 0, 100);
+
+    const gameplayOptions = context.gui.addFolder("Gameplay");
+    gameplayOptions.add(this, "shipLife", 0, 100);
 
     // Setup scene
 
@@ -200,6 +207,21 @@ export class GameState extends State<GameContext, EventId> {
           }
         });
       });
+    }
+
+    // Ship life bar
+    {
+      const width = 120;
+
+      const geometry = new Three.CapsuleGeometry(3, width, 8, 8);
+      const material = new Three.MeshBasicMaterial({color: 0x00ff00});
+      const capsule = new Three.Mesh(geometry, material);
+      capsule.rotation.z = Math.PI/2;
+      capsule.position.y = -2;
+      capsule.position.z = 90;
+
+      this.shipLifeBar = capsule;
+      this.ship.add(capsule);
     }
 
     // Tractor beam
@@ -574,6 +596,12 @@ export class GameState extends State<GameContext, EventId> {
         }
       }
     }
+
+    // Update ship life
+    this.shipLife -= this.shipLifeDownFactor;
+    this.shipLife = clamp(this.shipLife, 0, 100);
+    this.shipLifeBar.scale.y = this.shipLife / 100;
+    this.shipLifeBar.position.x = -60 + (60 * this.shipLifeBar.scale.y);
 
     // const bodies = [
     //   this.conePhysics,
