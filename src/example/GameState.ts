@@ -176,6 +176,14 @@ export class GameState extends State<GameContext, EventId> {
       context.assets.onReady((assets) => {
         const shipModel = assets.model("ufo");
         this.ship.add(shipModel);
+        shipModel.traverse((child) => {
+          if (child instanceof Three.Mesh) {
+            child.material = new Three.MeshLambertMaterial({
+              color: 0xffff00,
+              emissive: 0x00a0af,
+            });
+          }
+        });
       });
     }
 
@@ -267,7 +275,7 @@ export class GameState extends State<GameContext, EventId> {
     // Tractor beam light
     {
       const spotLight = new Three.SpotLight(0x00ffff);
-      spotLight.angle = Math.PI/64;
+      spotLight.angle = Math.PI / 64;
       spotLight.penumbra = 0.8;
       spotLight.target = new Three.Object3D();
       spotLight.target.position.y = -200;
@@ -430,7 +438,7 @@ export class GameState extends State<GameContext, EventId> {
         this.tractorBeamLight.color = new Three.Color(0x00ff00);
 
         new TWEEN.Tween(this.tractorBeamLight)
-          .to({ angle: Math.PI/14 }, shipParams.beamOpenSpeed)
+          .to({ angle: Math.PI / 14 }, shipParams.beamOpenSpeed)
           .easing(TWEEN.Easing.Quadratic.InOut)
           .start();
       } else {
@@ -443,9 +451,8 @@ export class GameState extends State<GameContext, EventId> {
           this.shipRay.material.color = new Three.Color(0x00ffff);
         this.tractorBeamLight.color = new Three.Color(0x00ffff);
 
-
         new TWEEN.Tween(this.tractorBeamLight)
-          .to({ angle: Math.PI/64 }, shipParams.beamCloseSpeed)
+          .to({ angle: Math.PI / 64 }, shipParams.beamCloseSpeed)
           .easing(TWEEN.Easing.Quadratic.InOut)
           .start();
       }
