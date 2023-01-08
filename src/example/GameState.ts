@@ -4,6 +4,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 import * as TWEEN from "@tweenjs/tween.js";
 import Matter from "matter-js";
+import { createNoise2D } from "simplex-noise";
 
 import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
@@ -128,6 +129,43 @@ export class GameState extends State<GameContext, EventId> {
     //material.wireframe = true;
     const circle = new Three.Mesh(geometry, material);
     this.scene.add(circle);
+
+    // Background layers
+
+    {
+      const noise = createNoise2D();
+
+      const layerColors = [0x3a0ca3, 0x480ca8, 0x560bad];
+
+      for (let layer = 0; layer < 3; ++layer) {
+        const layerHeight = this.planetRadius + 50 * (layer + 1);
+        const layerHeightDelta = 25;
+
+        const shape = new Three.Shape();
+
+        const divs = 200;
+        let step = (2 * Math.PI) / divs;
+
+        shape.moveTo(0, 0);
+        for (let i = 0; i < divs; ++i) {
+          const sample = i * (layer + 1) * 0.2;
+          const height = layerHeight + layerHeightDelta * noise(sample, 0);
+
+          shape.lineTo(
+            height * Math.cos(i * step),
+            height * Math.sin(i * step)
+          );
+        }
+
+        const geometry = new Three.ShapeGeometry(shape);
+        const material = new Three.MeshBasicMaterial({
+          color: layerColors[layer],
+        });
+        const mesh = new Three.Mesh(geometry, material);
+        mesh.position.z = -layer;
+        this.scene.add(mesh);
+      }
+    }
 
     // Ship
     {
