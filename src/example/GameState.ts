@@ -16,6 +16,9 @@ import { House } from "./House";
 import { barn, cow, house, tank, tree, World } from "./Worlds";
 import { Entity } from "./Entity";
 import { bulletCollisionCat } from "./physics";
+import { Cow } from "./Cow";
+import { Rock } from "./Rock";
+import { Tree } from "./Tree";
 
 const shipParams = {
   accelFactor: 1.22,
@@ -239,9 +242,9 @@ export class GameState extends State<GameContext, EventId> {
       const width = 120;
 
       const geometry = new Three.CapsuleGeometry(3, width, 8, 8);
-      const material = new Three.MeshBasicMaterial({color: 0x00ff00});
+      const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
       const capsule = new Three.Mesh(geometry, material);
-      capsule.rotation.z = Math.PI/2;
+      capsule.rotation.z = Math.PI / 2;
       capsule.position.y = -2;
       capsule.position.z = 90;
 
@@ -610,6 +613,14 @@ export class GameState extends State<GameContext, EventId> {
           if (distanceToShip < shipParams.shipDespawnDistance) {
             this.world.despawn(entity, this);
             this.attractedEntities.delete(entity);
+
+            if (entity instanceof Cow) {
+              this.shipLife += 10;
+            } else if (entity instanceof Tree) {
+              this.shipLife += 1;
+            } else if (entity instanceof Rock) {
+              this.shipLife -= 1;
+            }
           } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
             const scale = distanceToShip / shipParams.shipSlurpDistance;
@@ -628,7 +639,11 @@ export class GameState extends State<GameContext, EventId> {
     this.shipLife -= this.shipLifeDownFactor;
     this.shipLife = clamp(this.shipLife, 0, 100);
     this.shipLifeBar.scale.y = this.shipLife / 100;
-    this.shipLifeBar.position.x = -60 + (60 * this.shipLifeBar.scale.y);
+    this.shipLifeBar.position.x = -60 + 60 * this.shipLifeBar.scale.y;
+
+    if (this.shipLife == 0) {
+      //doTransition("game_ended");
+    }
 
     // Sync ship physics
 
