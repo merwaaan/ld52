@@ -212,7 +212,6 @@ export class GameState extends State<GameContext, EventId> {
       spotLight.intensity = 0.5;
       spotLight.penumbra = 0.2;
       spotLight.position.set(0, 0, 60);
-      spotLight.target = circle;
       spotLight.castShadow = true;
       this.ship.add(spotLight);
     }
@@ -220,13 +219,15 @@ export class GameState extends State<GameContext, EventId> {
     // Tractor beam light
     {
       const spotLight = new Three.SpotLight(0x00ff00);
-      spotLight.angle = Math.PI / 12;
+      spotLight.angle = Math.PI / 64;
       spotLight.penumbra = 0.8;
-      spotLight.position.set(0, 0, 60);
-      spotLight.target = circle;
+      spotLight.target = new Three.Object3D();
+      spotLight.target.position.y = -200;
+      spotLight.target.position.z = 30;
       spotLight.castShadow = true;
       this.tractorBeamLight = spotLight;
-      this.ship.add(spotLight);
+      this.rayHolder.add(spotLight.target);
+      this.rayHolder.add(spotLight);
     }
 
     // Physics debugger
