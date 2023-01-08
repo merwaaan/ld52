@@ -19,6 +19,9 @@ const shipParams = {
   rayMaxAngle: 0.2,
   rayAngleSpeedFactor: 0.1,
   attractRayOffScale: 0.1,
+
+  beamOpenSpeed: 200,
+  beamCloseSpeed: 200,
 };
 
 const cameraVerticalOffset = 200;
@@ -71,6 +74,10 @@ export class GameState extends State<GameContext, EventId> {
     shipOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
     shipOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
     shipOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
+
+    const beamOptions = context.gui.addFolder("Beam");
+    beamOptions.add(shipParams, "beamOpenSpeed", 0, 200);
+    beamOptions.add(shipParams, "beamCloseSpeed", 0, 200);
 
     // Setup scene
 
@@ -144,6 +151,9 @@ export class GameState extends State<GameContext, EventId> {
       material.opacity = 0.5;
       this.shipRay = new Three.Mesh(geometry, material);
       this.shipRay.position.y = -height / 2;
+      this.shipRay.scale.x = shipParams.attractRayOffScale;
+      if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+        this.shipRay.material.color = new Three.Color(0x00ffff);
 
       this.shipRayPhysics = Matter.Bodies.fromVertices(
         0,
@@ -218,8 +228,8 @@ export class GameState extends State<GameContext, EventId> {
 
     // Tractor beam light
     {
-      const spotLight = new Three.SpotLight(0x00ff00);
-      spotLight.angle = Math.PI / 64;
+      const spotLight = new Three.SpotLight(0x00ffff);
+      spotLight.angle = Math.PI/64;
       spotLight.penumbra = 0.8;
       spotLight.target = new Three.Object3D();
       spotLight.target.position.y = -200;
@@ -370,20 +380,37 @@ export class GameState extends State<GameContext, EventId> {
     // Move ray
     if (context.inputs.isButtonClicked(0)) {
       this.shipIsGrabbing = !this.shipIsGrabbing;
-    }
 
-    if (this.shipIsGrabbing) {
-      this.shipRay.scale.x = 1;
-      if (this.shipRay.material instanceof Three.MeshBasicMaterial)
-        this.shipRay.material.color = new Three.Color(0x00ff00);
-      this.tractorBeamLight.color = new Three.Color(0x00ff00);
-      this.tractorBeamLight.angle = Math.PI / 14;
-    } else {
-      this.shipRay.scale.x = shipParams.attractRayOffScale;
-      if (this.shipRay.material instanceof Three.MeshBasicMaterial)
-        this.shipRay.material.color = new Three.Color(0x00ffff);
-      this.tractorBeamLight.color = new Three.Color(0x00ffff);
-      this.tractorBeamLight.angle = Math.PI / 64;
+      if (this.shipIsGrabbing) {
+        new TWEEN.Tween(this.shipRay.scale)
+          .to({ x: 1 }, shipParams.beamOpenSpeed)
+          .easing(TWEEN.Easing.Quadratic.InOut)
+          .start();
+
+        if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+          this.shipRay.material.color = new Three.Color(0x00ff00);
+        this.tractorBeamLight.color = new Three.Color(0x00ff00);
+
+        new TWEEN.Tween(this.tractorBeamLight)
+          .to({ angle: Math.PI/14 }, shipParams.beamOpenSpeed)
+          .easing(TWEEN.Easing.Quadratic.InOut)
+          .start();
+      } else {
+        new TWEEN.Tween(this.shipRay.scale)
+          .to({ x: shipParams.attractRayOffScale }, shipParams.beamCloseSpeed)
+          .easing(TWEEN.Easing.Quadratic.InOut)
+          .start();
+
+        if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+          this.shipRay.material.color = new Three.Color(0x00ffff);
+        this.tractorBeamLight.color = new Three.Color(0x00ffff);
+
+
+        new TWEEN.Tween(this.tractorBeamLight)
+          .to({ angle: Math.PI/64 }, shipParams.beamCloseSpeed)
+          .easing(TWEEN.Easing.Quadratic.InOut)
+          .start();
+      }
     }
 
     const worldShipPosition = new Three.Vector3();
@@ -456,6 +483,7 @@ export class GameState extends State<GameContext, EventId> {
 
     // Update
 
+    TWEEN.update();
     Matter.Engine.update(this.physics, 1000 / 60);
     this.world.update(this, context);
 
