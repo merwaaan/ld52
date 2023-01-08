@@ -214,7 +214,7 @@ export class GameState extends State<GameContext, EventId> {
         });
       });
 
-      this.shipPhysics = Matter.Bodies.rectangle(0, 0, 200, 100, {
+      this.shipPhysics = Matter.Bodies.rectangle(0, 0, 160, 60, {
         isStatic: true,
         isSensor: true,
         collisionFilter: {
@@ -654,13 +654,15 @@ export class GameState extends State<GameContext, EventId> {
 
     // Sync ship physics
 
-    const worldShipPos = new Three.Vector3();
+    const worldShipPos = new Three.Vector3(0, 0, 0);
     this.ship.getWorldPosition(worldShipPos);
 
     Matter.Body.setPosition(this.shipPhysics, {
       x: worldShipPos.x,
       y: -worldShipPos.y,
     });
+
+    Matter.Body.setAngle(this.shipPhysics, this.planetRotation);
 
     // const bodies = [
     //   this.conePhysics,
