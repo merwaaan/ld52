@@ -10,7 +10,7 @@ export class Cow extends Entity {
   physics: Matter.Body;
 
   mixer: Three.AnimationMixer;
-  idleAction: Three.AnimationAction;
+  idleAction: Three.AnimationAction | null;
 
   constructor(x: number, y: number, context: GameContext) {
     super();
@@ -19,14 +19,14 @@ export class Cow extends Entity {
 
     const scale = 25;
 
-    const cowModel = context.assets.model("cow");
+    const cowModel = context.assets.model("cow").clone();
     cowModel.translateY(-scale / 2);
     cowModel.scale.set(scale, scale, scale);
 
     cowModel.traverse((child) => {
       if (child instanceof Three.Mesh) {
         child.material = new Three.MeshBasicMaterial({
-          color: 0x404040,
+          color: 0xff0000,
         });
       }
     });
@@ -42,8 +42,9 @@ export class Cow extends Entity {
 
     this.mixer = new Three.AnimationMixer(cowModel);
     const idleClip = Three.AnimationClip.findByName(cowModel.animations, "eat");
+
     this.idleAction = this.mixer.clipAction(idleClip);
-    this.idleAction.play();
+    this.idleAction?.play();
   }
 
   update() {
