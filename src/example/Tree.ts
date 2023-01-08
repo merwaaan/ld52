@@ -20,7 +20,7 @@ export class Tree extends Entity {
     this.model.scale.set(horizontalScale, verticalScale, horizontalScale);
 
     this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
-      isStatic: true,
+      //isStatic: true,
     });
   }
 

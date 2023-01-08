@@ -27,7 +27,7 @@ export class Rock extends Entity {
     );
 
     this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
-      isStatic: true,
+      //isStatic: true,
     });
   }
 
