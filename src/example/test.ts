@@ -14,6 +14,7 @@ import { MenuState as LoadState } from "./LoadState";
 import barnModelPath from "url:./assets/barn.obj";
 import cowModelPath from "url:./assets/cow.glb";
 import rockModelPath from "url:./assets/rock.obj";
+import tankModelPath from "url:./assets/tank.glb";
 import treeModelPath from "url:./assets/tree.obj";
 import ufoModelPath from "url:./assets/ufo.obj";
 
@@ -22,6 +23,7 @@ const assets = new Assets({
     barn: barnModelPath,
     cow: cowModelPath,
     rock: rockModelPath,
+    tank: tankModelPath,
     tree: treeModelPath,
     ufo: ufoModelPath,
   },

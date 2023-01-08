@@ -10,16 +10,19 @@ import { Tree } from "./Tree";
 import { Rock } from "./Rock";
 import { Barn } from "./Barn";
 import { weightedRandom } from "../utils";
+import { Tank } from "./Tank";
 
 type EntityDesc = {
   position: number;
 } & (
   | { type: "barn" }
+  | { type: "bullet"; velocity: [number, number] }
   | { type: "cow" }
   | { type: "house" }
   | { type: "smallRock" }
   | { type: "medRock" }
   | { type: "bigRock" }
+  | { type: "tank" }
   | { type: "tree" }
   | { type: "bigTree" }
 );
@@ -36,6 +39,10 @@ export function cow(x: number): EntityDesc {
 
 export function house(x: number): EntityDesc {
   return { type: "house", position: x };
+}
+
+export function tank(x: number): EntityDesc {
+  return { type: "tank", position: x };
 }
 
 export function tree(x: number): EntityDesc {
@@ -107,6 +114,7 @@ export class World {
       [bigTree, 2],
       [cow, 40],
       [barn, 5],
+      [tank, 5],
     ];
 
     let stop = t + 1;
@@ -128,6 +136,17 @@ export class World {
     return undefined;
   }
 
+  add(entity: Entity, state: GameState) {
+    console.debug("adding entity", entity);
+
+    this.spawnedEntities.push(entity);
+
+    state.scene.add(entity.model);
+
+    //Matter.Body.setAngle(entity.physics, angle);
+    Matter.Composite.add(state.physics.world, [entity.physics]);
+  }
+
   spawn(entityDesc: EntityDesc, state: GameState, context: GameContext) {
     console.debug("spawning entity", entityDesc);
 
@@ -147,6 +166,9 @@ export class World {
       case "house":
         entity = new House(position.x, position.y, 50);
         break;
+      case "tank":
+        entity = new Tank(position.x, position.y, context);
+        break;
       case "tree":
         entity = new Tree(position.x, position.y, 60, context);
         break;
@@ -162,6 +184,8 @@ export class World {
       case "bigRock":
         entity = new Rock(position.x, position.y, 40, context);
         break;
+      default:
+        throw new Error(`cannot spawn ${entityDesc.type}`);
     }
 
     this.spawnedEntities.push(entity);
@@ -217,7 +241,7 @@ export class World {
     // Update
 
     for (const entity of this.spawnedEntities) {
-      entity.update();
+      entity.update(state, this);
     }
 
     // Sync physics and models

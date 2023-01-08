@@ -13,7 +13,7 @@ import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
-import { World } from "./Worlds";
+import { barn, cow, house, tank, tree, World } from "./Worlds";
 import { Entity } from "./Entity";
 
 const shipParams = {
