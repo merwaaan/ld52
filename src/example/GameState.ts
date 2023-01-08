@@ -495,13 +495,13 @@ export class GameState extends State<GameContext, EventId> {
       rayAngle += Math.PI / 2 - shipAngleX;
 
       // Clamp rotation speed
-      let dt = rayAngle - this.rayHolder.rotation.z;
-      dt = clamp(
-        dt,
+      let d = rayAngle - this.rayHolder.rotation.z;
+      d = clamp(
+        d,
         -shipParams.rayAngleSpeedFactor,
         shipParams.rayAngleSpeedFactor
       );
-      this.rayHolder.rotation.z += dt;
+      this.rayHolder.rotation.z += d;
     }
 
     const coneWorldPos = new Three.Vector3();
@@ -544,7 +544,7 @@ export class GameState extends State<GameContext, EventId> {
     // Update
 
     TWEEN.update();
-    Matter.Engine.update(this.physics, 1000 / 60);
+    Matter.Engine.update(this.physics, dt);
     this.world.update(this, context);
 
     // Render
