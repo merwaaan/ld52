@@ -6,7 +6,9 @@ import * as TWEEN from "@tweenjs/tween.js";
 import Matter from "matter-js";
 import { createNoise2D } from "simplex-noise";
 
-import {EntityState} from "./Entity";
+import { MatterAttractors } from "./MatterAttractors";
+
+import { EntityState } from "./Entity";
 import { State } from "../StateMachine";
 import { EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
@@ -111,7 +113,11 @@ export class GameState extends State<GameContext, EventId> {
     const axesHelper = new Three.AxesHelper(50);
     this.scene.add(axesHelper);
 
+    // @ts-ignore
+    Matter.use(MatterAttractors);
+
     this.physics = Matter.Engine.create();
+    this.physics.gravity.scale = 0;
 
     var ground = Matter.Bodies.circle(
       0,
@@ -341,11 +347,11 @@ export class GameState extends State<GameContext, EventId> {
 
     // Redirect gravity
 
-    const gravityDir = new Three.Vector2(0, 1);
-    gravityDir.rotateAround(new Three.Vector2(0, 0), this.planetRotation);
-    gravityDir.normalize();
-    this.physics.gravity.x = gravityDir.x;
-    this.physics.gravity.y = gravityDir.y;
+    // const gravityDir = new Three.Vector2(0, 1);
+    // gravityDir.rotateAround(new Three.Vector2(0, 0), this.planetRotation);
+    // gravityDir.normalize();
+    // this.physics.gravity.x = gravityDir.x;
+    // this.physics.gravity.y = gravityDir.y;
 
     // Click = jump!
 
@@ -543,7 +549,7 @@ export class GameState extends State<GameContext, EventId> {
         bodyToShip.normalize();
         bodyToShip.multiplyScalar(shipParams.beamForce);
 
-        if (this.shipIsGrabbing || (entity.state > EntityState.BeingAbsorbed)) {
+        if (this.shipIsGrabbing || entity.state > EntityState.BeingAbsorbed) {
           entity.physics.frictionAir = 1;
 
           Matter.Body.applyForce(
@@ -555,8 +561,7 @@ export class GameState extends State<GameContext, EventId> {
           if (distanceToShip < shipParams.shipDespawnDistance) {
             this.world.despawn(entity, this);
             this.attractedEntities.delete(entity);
-          }
-          else if (distanceToShip < shipParams.shipSlurpDistance) {
+          } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
             const scale = distanceToShip / shipParams.shipSlurpDistance;
 

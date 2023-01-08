@@ -1,6 +1,6 @@
 import * as Matter from "matter-js";
 import * as Three from "three";
-import { randomBetween } from "../utils";
+import { planetAttraction, randomBetween } from "../utils";
 
 import { Entity } from "./Entity";
 import { GameContext } from "./test";
@@ -42,10 +42,11 @@ export class Rock extends Entity {
         isStatic: isStatic,
         //isSensor: true,
         //isSleeping: true,
-        friction: 1,
+        friction: 10,
         frictionAir: 0.01,
         mass: 1,
         inverseMass: 1,
+        plugin: planetAttraction(),
       }
     );
   }

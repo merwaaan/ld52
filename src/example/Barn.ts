@@ -3,7 +3,7 @@ import * as Three from "three";
 
 import { Entity } from "./Entity";
 import { GameContext } from "./test";
-import { randomBetween } from "../utils";
+import { planetAttraction, randomBetween } from "../utils";
 
 export class Barn extends Entity {
   model: Three.Object3D;
@@ -25,6 +25,7 @@ export class Barn extends Entity {
     this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
       //isStatic: true,
       frictionStatic: 10,
+      plugin: planetAttraction(),
     });
   }
 

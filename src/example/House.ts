@@ -1,5 +1,6 @@
 import * as Matter from "matter-js";
 import * as Three from "three";
+import { planetAttraction } from "../utils";
 
 import { Entity } from "./Entity";
 
@@ -17,6 +18,7 @@ export class House extends Entity {
     this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
       //isStatic: true,
       //isSensor: true,
+      plugin: planetAttraction(),
     });
   }
 

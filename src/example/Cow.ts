@@ -3,7 +3,7 @@ import * as Three from "three";
 
 import { Entity } from "./Entity";
 import { GameContext } from "./test";
-import { randomBetween } from "../utils";
+import { planetAttraction, randomBetween } from "../utils";
 
 export class Cow extends Entity {
   model: Three.Object3D;
@@ -35,6 +35,7 @@ export class Cow extends Entity {
 
     this.physics = Matter.Bodies.rectangle(x, -y, scale, scale, {
       //isStatic: true,
+      plugin: planetAttraction(),
     });
 
     // Anim

@@ -1,3 +1,5 @@
+import Matter from "matter-js";
+
 // Returns relative position wrt top-left corner of element
 export function computeRelativePosition(
   position: [number, number],
@@ -48,4 +50,19 @@ export function weightedRandom(array: [any, number][]): any {
   }
 
   return undefined;
+}
+
+export function planetAttraction() {
+  return {
+    attractors: [
+      (a: Matter.Body, b: Matter.Body) => {
+        const p = b.position;
+        const dir = Matter.Vector.sub(Matter.Vector.create(0, 0), p);
+        const dirNorm = Matter.Vector.normalise(dir);
+        const g = Matter.Vector.mult(dirNorm, 0.0005);
+
+        return g;
+      },
+    ],
+  };
 }

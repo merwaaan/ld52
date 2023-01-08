@@ -3,7 +3,7 @@ import * as Three from "three";
 
 import { Entity } from "./Entity";
 import { GameContext } from "./test";
-import { randomBetween } from "../utils";
+import { planetAttraction, randomBetween } from "../utils";
 
 export class Tree extends Entity {
   model: Three.Object3D;
@@ -35,6 +35,7 @@ export class Tree extends Entity {
         frictionAir: 0.01,
         mass: 1,
         inverseMass: 1,
+        plugin: planetAttraction(),
       }
     );
   }
