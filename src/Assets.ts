@@ -24,15 +24,31 @@ export class Assets<TAssets extends AssetList> {
     [key in keyof TAssets["sounds"]]: AudioBuffer;
   };
 
+  private _assetsCount: number = 0;
+  private _loadedCount: number = 0;
+
   private _loaded: boolean = false;
   private _onReadyCallbacks: OnReadyCallback<Assets<TAssets>>[] = [];
 
   constructor(assetList: TAssets) {
     this._assetList = assetList;
+
+    this._assetsCount =
+      Object.keys(assetList["models"] ?? {}).length +
+      Object.keys(assetList["textures"] ?? {}).length +
+      Object.keys(assetList["sounds"] ?? {}).length;
   }
 
   get loaded() {
     return this._loaded;
+  }
+
+  checkAllLoaded() {
+    this._loadedCount += 1;
+    if (this._loadedCount == this._assetsCount) {
+      this._loaded = true;
+      this._onReadyCallbacks.forEach((callback) => callback(this));
+    }
   }
 
   load(): Assets<TAssets> {
@@ -40,8 +56,7 @@ export class Assets<TAssets extends AssetList> {
 
     const manager = new THREE.LoadingManager(
       () => {
-        this._loaded = true;
-        this._onReadyCallbacks.forEach((callback) => callback(this));
+        // Don't bother with this callback
       },
       (url, loaded, total) => {
         console.debug(`Loaded ${url} (${loaded}/${total})`);
@@ -54,15 +69,16 @@ export class Assets<TAssets extends AssetList> {
     // Models
 
     Object.entries(this._assetList["models"] ?? {}).forEach(([id, path]) => {
-      console.log(id, path);
       if (path.includes(".obj")) {
         new OBJLoader(manager).load(path, (object) => {
           this._models[id as keyof TAssets["models"]] = object;
+          this.checkAllLoaded();
         });
       } else if (path.includes("glb")) {
         new GLTFLoader(manager).load(path, (gltf) => {
           gltf.scene.animations = gltf.animations; // Attach animations
           this._models[id as keyof TAssets["models"]] = gltf.scene;
+          this.checkAllLoaded();
         });
       } else {
         throw new Error(`Unknown extension: ${path}`);
@@ -74,6 +90,7 @@ export class Assets<TAssets extends AssetList> {
     Object.entries(this._assetList["textures"] ?? {}).forEach(([id, path]) => {
       new THREE.TextureLoader(manager).load(path, (texture) => {
         this._textures[id as keyof TAssets["textures"]] = texture;
+        this.checkAllLoaded();
       });
     });
 
@@ -82,6 +99,7 @@ export class Assets<TAssets extends AssetList> {
     Object.entries(this._assetList["sounds"] ?? {}).forEach(([id, path]) => {
       new THREE.AudioLoader(manager).load(path, (buffer) => {
         this._sounds[id as keyof TAssets["sounds"]] = buffer;
+        this.checkAllLoaded();
       });
     });
 

@@ -59,6 +59,8 @@ export class GameState extends State<GameContext, EventId> {
 
   tractorBeamLight: Three.SpotLight;
 
+  soundBgm: Three.Audio | undefined;
+
   physics: Matter.Engine;
   physicsRenderer: Matter.Render;
 
@@ -390,6 +392,17 @@ export class GameState extends State<GameContext, EventId> {
     Matter.Render.run(this.physicsRenderer);
 
     this.shipVelocity = new Three.Vector2(0, 0);
+
+    // Start BGM if not already started (due to requiring an interaction)
+    context.assets.onReady((assets) => {
+      const listener = new Three.AudioListener();
+      this.camera.add(listener);
+      this.soundBgm = new Three.Audio(listener);
+      this.soundBgm.setBuffer(assets.sound("bg"));
+      this.soundBgm.setLoop(true);
+      this.soundBgm.setVolume(0.5);
+      this.soundBgm.play();
+    });
   }
 
   enter(context: GameContext) {}
@@ -627,15 +640,14 @@ export class GameState extends State<GameContext, EventId> {
             } else if (entity instanceof Tree) {
               this.shipLife += 1;
             } else if (entity instanceof Rock) {
-              if (entity.size >= 20)
+              if (entity.size >= 20) {
                 this.shipLife -= 10;
-              else
+              } else {
                 this.shipLife -= 5;
-            }
-            else if (entity instanceof Tank) {
+              }
+            } else if (entity instanceof Tank) {
               this.shipLife -= 8;
             }
-
           } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
             const scale = distanceToShip / shipParams.shipSlurpDistance;

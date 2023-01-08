@@ -106,7 +106,7 @@ export class World {
     let desc = [];
     const tInc = 0.01;
 
-    console.log("genlevel", t);
+    //console.log("genlevel", t);
 
     let p: [any, number][];
     if (t < 0.5) {
@@ -167,7 +167,7 @@ export class World {
   }
 
   add(entity: Entity, state: GameState) {
-    console.debug("adding entity", entity);
+    //console.debug("adding entity", entity);
 
     this.spawnedEntities.push(entity);
 
@@ -178,7 +178,7 @@ export class World {
   }
 
   spawn(entityDesc: EntityDesc, state: GameState, context: GameContext) {
-    console.debug("spawning entity", entityDesc);
+    //console.debug("spawning entity", entityDesc);
 
     let angle = entityDesc.position * 2 * Math.PI;
     let position = new Three.Vector2(0, state.planetRadius + 10);
@@ -227,7 +227,7 @@ export class World {
   }
 
   despawn(entity: Entity, state: GameState) {
-    console.debug("despawning entity", entity);
+    //console.debug("despawning entity", entity);
 
     state.scene.remove(entity.model);
     Matter.Composite.remove(state.physics.world, entity.physics);

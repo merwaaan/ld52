@@ -18,6 +18,8 @@ import tankModelPath from "url:./assets/tank.glb";
 import treeModelPath from "url:./assets/tree.obj";
 import ufoModelPath from "url:./assets/ufo.obj";
 
+import bgSfxPath from "url:./assets/sfx/bg.ogg";
+
 const assets = new Assets({
   models: {
     barn: barnModelPath,
@@ -26,6 +28,10 @@ const assets = new Assets({
     tank: tankModelPath,
     tree: treeModelPath,
     ufo: ufoModelPath,
+  },
+
+  sounds: {
+    bg: bgSfxPath,
   },
 });
 
@@ -38,47 +44,52 @@ export type GameContext = {
   assets: typeof assets;
 };
 
-const gameContext: GameContext = {
-  renderer: new THREE.WebGLRenderer({ antialias: true }),
-  inputs: new Inputs(),
-  gui: new dat.GUI(),
-  assets,
-};
-
-gameContext.renderer.setSize(800, 600);
-gameContext.renderer.setClearColor(0x0, 1);
-document.body.appendChild(gameContext.renderer.domElement);
-gameContext.renderer.domElement.addEventListener("contextmenu", (event) => {
-  event.preventDefault();
-});
-
-// Setup states
-
 export type StateId = "load" | "game";
 export type EventId = "game_started" | "game_ended";
 
-const machine = new StateMachine<GameContext, StateId, EventId>(gameContext, {
-  initial: "load",
-  states: {
-    load: {
-      state: new LoadState(),
-      transitions: [{ event: "game_started", target: "game" }],
-    },
-    game: {
-      state: new GameState(gameContext),
-      transitions: [{ event: "game_ended", target: "load" }],
-    },
-  },
-});
+function setup() {
+  document.removeEventListener("click", setup);
 
-// Run
-const g_stats = new Stats();
-g_stats.showPanel(1);
-document.body.appendChild(g_stats.dom);
+  const gameContext: GameContext = {
+    renderer: new THREE.WebGLRenderer({ antialias: true }),
+    inputs: new Inputs(),
+    gui: new dat.GUI(),
+    assets,
+  };
 
-loop(() => {
-  g_stats.begin();
-  machine.update(gameContext);
-  gameContext.inputs.update();
-  g_stats.end();
-});
+  gameContext.renderer.setSize(800, 600);
+  gameContext.renderer.setClearColor(0x0, 1);
+  document.body.appendChild(gameContext.renderer.domElement);
+  gameContext.renderer.domElement.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+
+  // Setup states
+  const machine = new StateMachine<GameContext, StateId, EventId>(gameContext, {
+    initial: "load",
+    states: {
+      load: {
+        state: new LoadState(),
+        transitions: [{ event: "game_started", target: "game" }],
+      },
+      game: {
+        state: new GameState(gameContext),
+        transitions: [{ event: "game_ended", target: "load" }],
+      },
+    },
+  });
+
+  // Run
+  const g_stats = new Stats();
+  g_stats.showPanel(1);
+  document.body.appendChild(g_stats.dom);
+
+  loop(() => {
+    g_stats.begin();
+    machine.update(gameContext);
+    gameContext.inputs.update();
+    g_stats.end();
+  });
+}
+
+document.addEventListener("click", setup);
