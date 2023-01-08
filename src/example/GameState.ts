@@ -13,16 +13,16 @@ import { House } from "./House";
 import { cow, house, rock, tree, World } from "./Worlds";
 
 const shipParams = {
-  accelFactor: 0.5,
-  maxSpeed: 2.3,
+  accelFactor: 0.3,
+  maxSpeed: 5,
   friction: 0.93,
   slantFactor: 0.05,
+
   rayMaxAngle: 0.2,
   rayAngleSpeedFactor: 0.1,
   attractRayOffScale: 0.1,
-
-  beamOpenSpeed: 200,
-  beamCloseSpeed: 200,
+  beamOpenSpeed: 320,
+  beamCloseSpeed: 160,
 };
 
 const cameraVerticalOffset = 200;
@@ -69,16 +69,16 @@ export class GameState extends State<GameContext, EventId> {
 
     const shipOptions = context.gui.addFolder("Ship");
     shipOptions.add(shipParams, "accelFactor", 0, 1);
-    shipOptions.add(shipParams, "maxSpeed", 0, 3);
+    shipOptions.add(shipParams, "maxSpeed", 0, 6);
     shipOptions.add(shipParams, "friction", 0.85, 1);
     shipOptions.add(shipParams, "slantFactor", 0, 0.1);
-    shipOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
-    shipOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
-    shipOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
 
     const beamOptions = context.gui.addFolder("Beam");
-    beamOptions.add(shipParams, "beamOpenSpeed", 0, 200);
-    beamOptions.add(shipParams, "beamCloseSpeed", 0, 200);
+    beamOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
+    beamOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.1);
+    beamOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
+    beamOptions.add(shipParams, "beamOpenSpeed", 0, 500);
+    beamOptions.add(shipParams, "beamCloseSpeed", 0, 500);
 
     // Setup scene
 
@@ -423,7 +423,7 @@ export class GameState extends State<GameContext, EventId> {
       shipBoundsY[1]
     );
 
-    const shipAngle = this.shipVelocity.x * shipParams.slantFactor;
+    const shipAngle = this.shipVelocity.x * -shipParams.slantFactor;
     this.ship.rotation.z = shipAngle;
 
     // Move ray
@@ -433,7 +433,7 @@ export class GameState extends State<GameContext, EventId> {
       if (this.shipIsGrabbing) {
         new TWEEN.Tween(this.shipRay.scale)
           .to({ x: 1 }, shipParams.beamOpenSpeed)
-          .easing(TWEEN.Easing.Quadratic.InOut)
+          .easing(TWEEN.Easing.Elastic.Out)
           .start();
 
         if (this.shipRay.material instanceof Three.MeshBasicMaterial)
@@ -442,12 +442,12 @@ export class GameState extends State<GameContext, EventId> {
 
         new TWEEN.Tween(this.tractorBeamLight)
           .to({ angle: Math.PI / 14 }, shipParams.beamOpenSpeed)
-          .easing(TWEEN.Easing.Quadratic.InOut)
+          .easing(TWEEN.Easing.Elastic.Out)
           .start();
       } else {
         new TWEEN.Tween(this.shipRay.scale)
           .to({ x: shipParams.attractRayOffScale }, shipParams.beamCloseSpeed)
-          .easing(TWEEN.Easing.Quadratic.InOut)
+          .easing(TWEEN.Easing.Quadratic.Out)
           .start();
 
         if (this.shipRay.material instanceof Three.MeshBasicMaterial)
@@ -456,7 +456,7 @@ export class GameState extends State<GameContext, EventId> {
 
         new TWEEN.Tween(this.tractorBeamLight)
           .to({ angle: Math.PI / 64 }, shipParams.beamCloseSpeed)
-          .easing(TWEEN.Easing.Quadratic.InOut)
+          .easing(TWEEN.Easing.Quadratic.Out)
           .start();
       }
     }
