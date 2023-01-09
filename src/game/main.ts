@@ -124,5 +124,4 @@ function setup() {
   });
 }
 
-//document.addEventListener("click", setup);
-setup();
+document.addEventListener("click", setup);
