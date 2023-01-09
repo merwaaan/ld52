@@ -351,7 +351,7 @@ export class GameState extends State<GameContext, EventId> {
           this.camera.add(sprite);
 
           const destx = randomBetween(-sw, sw);
-          const speed = randomBetween(30000, 60000);
+          const speed = randomBetween(120000, 240000);
 
           new TWEEN.Tween(sprite.position)
             .to({ x: destx }, speed)
