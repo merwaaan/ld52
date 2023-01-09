@@ -281,11 +281,7 @@ export class World {
       const cameraSpacePos = entity.model.position.clone();
       cameraSpacePos.project(state.cameraCamera);
 
-      const nearPlanetCenter =
-        entity.model.position.y < 100 &&
-        entity.model.position.y > -100 &&
-        entity.model.position.x < 100 &&
-        entity.model.position.x > -100;
+      const nearPlanetCenter = entity.model.position.length() < 900;
 
       const remove = cameraSpacePos.x < -1.2 || nearPlanetCenter;
 
