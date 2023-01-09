@@ -49,6 +49,9 @@ enum PlayState {
   Intro,
   IntroExit,
   Playing,
+  DeathEnter,
+  DeathFade,
+  WaitingForReset,
 }
 
 export class GameState extends State<GameContext, EventId> {
@@ -651,10 +654,85 @@ export class GameState extends State<GameContext, EventId> {
   enter(context: GameContext) {}
   exit(context: GameContext) {}
 
+  reset() {
+    this.ship.position.x = 0;
+    this.ship.position.y = 0;
+    this.shipVelocity.x = 0;
+    this.shipVelocity.y = 0;
+    this.shipLife = 100;
+    this.ship.rotation.x = 0;
+    this.ship.rotation.z = 0;
+    this.shipIsGrabbing = false;
+
+    this.shipRay.scale.x = shipParams.attractRayOffScale;
+    if (this.beamSfx && this.beamSfx.isPlaying) {
+      this.beamSfx.stop();
+    }
+
+    this.planetRotation = 0;
+    this.cameraPivot.rotation.z = 0;
+
+    this.isPaused = false;
+
+    this.world.reset(this);
+  }
+
   updateUI(context: GameContext) {
     if (this.playState == PlayState.Intro) {
       context.ui.globalCompositeOperation = "source-over";
-      context.ui.fillStyle = "#000";
+      context.ui.fillStyle = "#222";
+      context.ui.fillRect(0, 0, 800, 600);
+
+      context.ui.globalCompositeOperation = "destination-out";
+      context.ui.fillStyle = "#fff";
+
+      context.ui.beginPath();
+      context.ui.arc(400, 300, this.circleMaskRadius, 0, Math.PI * 2);
+      context.ui.fill();
+
+      if (this.circleMaskRadius >= 600) {
+        this.playState = PlayState.IntroExit;
+        context.ui.clearRect(0, 0, 800, 600);
+      } else if (this.circleMaskRadius >= 400) {
+        this.isPaused = false;
+      }
+    } else if (this.playState == PlayState.DeathFade) {
+      context.ui.globalCompositeOperation = "source-over";
+      context.ui.fillStyle = "#222";
+      context.ui.fillRect(0, 0, 800, 600);
+
+      context.ui.globalCompositeOperation = "destination-out";
+      context.ui.fillStyle = "#fff";
+
+      const worldShipPosition = new Three.Vector3();
+      this.ship.getWorldPosition(worldShipPosition);
+      worldShipPosition.project(this.camera);
+
+      const center = new Three.Vector2(
+        (worldShipPosition.x + 1) * 400,
+        (-worldShipPosition.y + 1) * 300
+      );
+
+      const r = Math.max(this.circleMaskRadius, 0);
+
+      context.ui.beginPath();
+      context.ui.arc(center.x, center.y, r, 0, Math.PI * 2);
+      context.ui.fill();
+
+      if (this.circleMaskRadius == 0) {
+        this.playState = PlayState.WaitingForReset;
+
+        this.reset();
+
+        new TWEEN.Tween(this)
+          .to({ circleMaskRadius: 600 }, 2500)
+          .easing(TWEEN.Easing.Cubic.Out)
+          .delay(500)
+          .start();
+      }
+    } else if (this.playState == PlayState.WaitingForReset) {
+      context.ui.globalCompositeOperation = "source-over";
+      context.ui.fillStyle = "#222";
       context.ui.fillRect(0, 0, 800, 600);
 
       context.ui.globalCompositeOperation = "destination-out";
@@ -669,8 +747,6 @@ export class GameState extends State<GameContext, EventId> {
       } else if (this.circleMaskRadius >= 400) {
         this.isPaused = false;
       }
-    } else if (this.playState == PlayState.IntroExit) {
-      context.ui.clearRect(0, 0, 800, 600);
     }
   }
 
@@ -692,11 +768,29 @@ export class GameState extends State<GameContext, EventId> {
         .easing(TWEEN.Easing.Cubic.Out)
         .delay(3000);
 
-      f0.chain(f1, f2).start();
+      f0.chain(f1, f2);
+      f0.start();
 
       this.playState = PlayState.Intro;
     } else if (this.playState == PlayState.IntroExit) {
       this.isPaused = false;
+      this.playState = PlayState.Playing;
+    } else if (this.playState == PlayState.DeathEnter) {
+      this.circleMaskRadius = 1000;
+
+      const f0 = new TWEEN.Tween(this)
+        .to({ circleMaskRadius: 80 }, 1500)
+        .easing(TWEEN.Easing.Cubic.Out);
+
+      const f1 = new TWEEN.Tween(this)
+        .to({ circleMaskRadius: 0 }, 500)
+        .easing(TWEEN.Easing.Cubic.In)
+        .delay(800);
+
+      f0.chain(f1);
+      f0.start();
+
+      this.playState = PlayState.DeathFade;
     }
 
     this.updateUI(context);
@@ -975,7 +1069,12 @@ export class GameState extends State<GameContext, EventId> {
       this.shipLifeBar.position.x = -60 + 60 * this.shipLifeBar.scale.y;
     }
 
-    if (this.shipLife == 0) {
+    if (this.playState == PlayState.Playing && this.shipLife == 0) {
+      this.isPaused = true;
+      this.playState = PlayState.DeathEnter;
+      if (this.beamSfx && this.beamSfx.isPlaying) {
+        this.beamSfx.stop();
+      }
       //doTransition("game_ended");
     }
 

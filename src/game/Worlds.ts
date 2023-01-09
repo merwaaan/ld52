@@ -248,6 +248,15 @@ export class World {
     Matter.Composite.remove(state.physics.world, entity.physics);
   }
 
+  reset(state: GameState) {
+    for (const entity of this.spawnedEntities) {
+      this.despawn(entity, state);
+    }
+
+    this.entitiesToSpawn.length = 0;
+    this.entitiesToSpawn = this.generateNewEntities(-0.05);
+  }
+
   update(state: GameState, context: GameContext) {
     // Spawn new entities
 
