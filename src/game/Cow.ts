@@ -29,7 +29,7 @@ export class Cow extends Entity {
   mode: "idle" | "eat" | "panic" = "idle";
   nextModeDelay: number = animDelay();
 
-  nextMooDelay: number = animDelay();
+  nextMooDelay: number = mooDelay();
 
   left = false;
 

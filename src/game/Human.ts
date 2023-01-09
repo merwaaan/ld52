@@ -15,6 +15,17 @@ function delay() {
   return randomBetween(3, 6);
 }
 
+function haaDelay() {
+  return Math.random() * 5 + 5;
+}
+
+const haas = ["HAAA", "HA!", "ho.", ":("];
+
+function randomHaa() {
+  const i = Math.floor(Math.random() * haas.length);
+  return haas[i];
+}
+
 export class Human extends Entity {
   model: Three.Object3D;
   physics: Matter.Body;
@@ -25,6 +36,8 @@ export class Human extends Entity {
     | { type: "run"; goingLeft: boolean };
 
   nextModeDelay: number = delay();
+
+  nextHaaDelay: number = haaDelay();
 
   mixer?: Three.AnimationMixer;
   runAction?: Three.AnimationAction;
@@ -46,7 +59,7 @@ export class Human extends Entity {
       plugin: planetAttraction(),
     });
 
-    this.mode = { type: "run", goingLeft: true };
+    this.mode = { type: "run", goingLeft: Math.random() > 0.5 };
 
     context.assets.onReady((assets) => {
       const humanModel = SkeletonUtils.clone(assets.model("human"));
@@ -111,8 +124,26 @@ export class Human extends Entity {
     //Matter.Body.setStatic(this.physics, false);
   }
 
-  update(state: GameState, world: World) {
+  update(state: GameState, world: World, context: GameContext) {
     const dt = 1 / 60;
+
+    // Haa
+
+    this.nextHaaDelay -= dt;
+
+    if (this.nextHaaDelay < 0) {
+      const p = new Three.Vector3();
+      p.copy(this.model.position);
+      p.y += 25;
+
+      state.spawnBubble(context, randomHaa(), p, {
+        size: 10,
+        endScale: 1,
+        vertOffset: 5,
+        duration: 3000,
+      });
+      this.nextHaaDelay = haaDelay();
+    }
 
     // State update
 

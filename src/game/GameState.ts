@@ -954,7 +954,7 @@ export class GameState extends State<GameContext, EventId> {
       this.camera.add(mesh);
     } else {
       this.scene.add(mesh);
-      mesh.rotation.z = this.planetRotation;
+      mesh.rotateZ(this.planetRotation);
     }
 
     const b = new ScoreBubble(mesh, new Three.Vector2(0, 1), 1000);
@@ -1313,7 +1313,6 @@ export class GameState extends State<GameContext, EventId> {
             if (score != 0) {
               this.spawnScoreBubble(context, score);
             }
-
           } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
             const scale = distanceToShip / shipParams.shipSlurpDistance;

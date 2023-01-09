@@ -2,6 +2,7 @@ import * as Three from "three";
 import * as Matter from "matter-js";
 import { GameState } from "./GameState";
 import { World } from "./Worlds";
+import { GameContext } from "./main";
 
 export enum EntityState {
   Alive,
@@ -17,7 +18,7 @@ export abstract class Entity {
 
   otherPhysics: (Matter.Body | Matter.Constraint)[] = [];
 
-  abstract update(state: GameState, world: World): void;
+  abstract update(state: GameState, world: World, context: GameContext): void;
 
   _grabbed: boolean = false;
 
