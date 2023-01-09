@@ -3,11 +3,12 @@ import * as Three from "three";
 
 import { Entity } from "./Entity";
 import { GameContext } from "./main";
-import { planetAttraction, randomBetween } from "../utils";
+import { clamp, planetAttraction, randomBetween } from "../utils";
 import { GameState } from "./GameState";
 import { World } from "./Worlds";
 import { bulletCollisionCat } from "./physics";
 import { assignMaterial, bwMaterial, colors } from "./colors";
+import { Vector3 } from "three";
 
 function delay() {
   return randomBetween(1, 3);
@@ -29,22 +30,28 @@ export class Tank extends Entity {
 
     const scale = 50;
 
-    const tankModel = context.assets.model("tank").clone();
-    tankModel.translateY(-scale / 2);
-    tankModel.scale.set(scale, scale, scale);
-    assignMaterial(tankModel, bwMaterial(colors["tank"]));
-
-    tankModel.traverse((child) => {
-      if (child.name == "gun") {
-        this.gunObject = child;
-      }
-    });
-
-    this.model.add(tankModel);
-
-    this.physics = Matter.Bodies.rectangle(x, -y, scale, scale, {
+    this.physics = Matter.Bodies.rectangle(x, -y, scale * 0.9, scale * 0.9, {
       //isStatic: true,
     });
+
+    context.assets.onReady((assets) => {
+      const tankModel = context.assets.model("tank").clone();
+      tankModel.translateY(-scale / 2);
+      tankModel.scale.set(scale, scale, scale);
+      assignMaterial(tankModel, bwMaterial(colors["tank"]));
+
+      tankModel.traverse((child) => {
+        if (child.name == "gun") {
+          this.gunObject = child;
+        }
+      });
+
+      this.model.add(tankModel);
+    });
+  }
+
+  grab() {
+    console.log("grabbed");
   }
 
   update(state: GameState, world: World) {
@@ -59,21 +66,30 @@ export class Tank extends Entity {
       const shipWorldPos = new Three.Vector3();
       state.ship.getWorldPosition(shipWorldPos);
 
-      const dir = shipWorldPos;
+      const dir = shipWorldPos.clone();
       dir.sub(gunWorldPos);
       dir.normalize();
 
-      this.gunObject.rotation.z = -new Three.Vector3(0, 1, 0).angleTo(dir);
+      const gunDirLocal = new Vector3(0, 1, 0);
+      const gunDirWorld = gunDirLocal.transformDirection(
+        this.gunObject.matrixWorld
+      );
+      const refVec = new Three.Vector3(0, 0, 1).cross(dir);
+
+      const rotSpeed = 0.005;
+      this.gunObject.rotateZ(rotSpeed * (gunDirWorld.dot(refVec) < 0 ? 1 : -1));
+
+      this.gunObject.rotation.z = clamp(this.gunObject.rotation.z, -1.5, 1.5);
 
       // Shoot
 
       this.nextShotDelay -= dt;
 
       if (this.nextShotDelay < 0) {
-        const gunOffset = dir.clone().multiplyScalar(50);
+        const gunOffset = gunDirWorld.clone().multiplyScalar(20);
         const pos = gunWorldPos.add(gunOffset);
 
-        const vel = dir.multiplyScalar(10);
+        const vel = gunDirWorld.multiplyScalar(12);
 
         world.add(new Bullet(pos.x, pos.y, vel.x, vel.y), state);
 

@@ -19,9 +19,11 @@ export function bw(intensity: number) {
 }
 
 export function bwMaterial(intensity: number) {
-  return new Three.MeshLambertMaterial({
+  return new Three.MeshPhongMaterial({
     color: bw(intensity),
     emissive: bw(intensity * 0.25),
+    specular: 0xfffff,
+    shininess: 5,
   });
 }
 
