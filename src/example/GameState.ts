@@ -60,6 +60,8 @@ export class GameState extends State<GameContext, EventId> {
   tractorBeamLight: Three.SpotLight;
 
   soundBgm: Three.Audio | undefined;
+  beamSfx: Three.Audio | undefined;
+  shipSfx: Three.Audio | undefined;
 
   physics: Matter.Engine;
   physicsRenderer: Matter.Render;
@@ -402,6 +404,19 @@ export class GameState extends State<GameContext, EventId> {
       this.soundBgm.setLoop(true);
       this.soundBgm.setVolume(0.5);
       this.soundBgm.play();
+
+      this.beamSfx = new Three.Audio(listener);
+      this.beamSfx.setBuffer(assets.sound("beam"));
+      this.beamSfx.setLoop(true);
+      this.beamSfx.setLoopStart(0.8);
+      this.beamSfx.setLoopEnd(8.0);
+      this.beamSfx.setVolume(0.09);
+
+      this.shipSfx = new Three.Audio(listener);
+      this.shipSfx.setBuffer(assets.sound("ship"));
+      this.shipSfx.setLoop(true);
+      this.shipSfx.setVolume(0.04);
+      this.shipSfx.play();
     });
   }
 
@@ -531,6 +546,9 @@ export class GameState extends State<GameContext, EventId> {
       this.shipIsGrabbing = !this.shipIsGrabbing;
 
       if (this.shipIsGrabbing) {
+        if (this.beamSfx)
+          this.beamSfx.play();
+
         new TWEEN.Tween(this.shipRay.scale)
           .to({ x: 1 }, shipParams.beamOpenSpeed)
           .easing(TWEEN.Easing.Elastic.Out)
@@ -545,6 +563,9 @@ export class GameState extends State<GameContext, EventId> {
           .easing(TWEEN.Easing.Elastic.Out)
           .start();
       } else {
+        if (this.beamSfx)
+          this.beamSfx.stop();
+
         new TWEEN.Tween(this.shipRay.scale)
           .to({ x: shipParams.attractRayOffScale }, shipParams.beamCloseSpeed)
           .easing(TWEEN.Easing.Quadratic.Out)

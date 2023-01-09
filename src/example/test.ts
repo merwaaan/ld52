@@ -20,6 +20,8 @@ import treeModelPath from "url:./assets/tree.obj";
 import ufoModelPath from "url:./assets/ufo.obj";
 
 import bgSfxPath from "url:./assets/sfx/bg.ogg";
+import beamSfxPath from "url:./assets/sfx/beam.ogg";
+import shipSfxPath from "url:./assets/sfx/ship.ogg";
 
 const assets = new Assets({
   models: {
@@ -34,6 +36,8 @@ const assets = new Assets({
 
   sounds: {
     bg: bgSfxPath,
+    beam: beamSfxPath,
+    ship: shipSfxPath,
   },
 });
 
