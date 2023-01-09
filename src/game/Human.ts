@@ -41,6 +41,11 @@ export class Human extends Entity {
     this.physics = Matter.Bodies.rectangle(x, -y, scale, scale, {
       isStatic: true,
       //frictionAir: 0.01,
+
+      friction: 1,
+      frictionAir: 0.01,
+      mass: 1,
+      inverseMass: 1,
     });
     //Matter.Body.setMass(this.physics, 1);
 

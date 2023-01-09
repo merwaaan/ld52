@@ -76,7 +76,7 @@ export class Tank extends Entity {
       );
       const refVec = new Three.Vector3(0, 0, 1).cross(dir);
 
-      const rotSpeed = 0.005;
+      const rotSpeed = 0.02;
       this.gunObject.rotateZ(rotSpeed * (gunDirWorld.dot(refVec) < 0 ? 1 : -1));
 
       this.gunObject.rotation.z = clamp(this.gunObject.rotation.z, -1.5, 1.5);
@@ -89,7 +89,7 @@ export class Tank extends Entity {
         const gunOffset = gunDirWorld.clone().multiplyScalar(20);
         const pos = gunWorldPos.add(gunOffset);
 
-        const vel = gunDirWorld.multiplyScalar(12);
+        const vel = gunDirWorld.multiplyScalar(15);
 
         world.add(new Bullet(pos.x, pos.y, vel.x, vel.y), state);
 
