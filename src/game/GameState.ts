@@ -52,10 +52,21 @@ enum PlayState {
   DeathEnter,
   DeathFade,
   WaitingForReset,
+  ResetExit,
 }
 
 export class GameState extends State<GameContext, EventId> {
   scene: Three.Scene;
+
+  caughtHumans: number = 0;
+  caughtCows: number = 0;
+  caughtTrees: number = 0;
+  caughtRocks: number = 0;
+
+  scoreCowMultiplier: number = 50;
+  scoreTreeMultiplier: number = 5;
+  scoreHumanMultiplier: number = 10;
+  scoreRockMultiplier: number = -10;
 
   playState: PlayState;
   isPaused: boolean = false;
@@ -408,6 +419,7 @@ export class GameState extends State<GameContext, EventId> {
               pair.bodyA == this.shipPhysics ? pair.bodyB : pair.bodyA;
 
             this.shipLife -= 10;
+            this.shipLife = clamp(this.shipLife, 0, 100);
             const bulletEntity = this.world.lookupEntity(bullet);
             if (bulletEntity) this.world.despawn(bulletEntity, this);
           }
@@ -722,17 +734,64 @@ export class GameState extends State<GameContext, EventId> {
       context.ui.fill();
 
       if (this.circleMaskRadius == 0) {
-        this.playState = PlayState.WaitingForReset;
-
         this.reset();
 
+        const w = 800;
+        const h = 600;
+
+        context.ui.globalCompositeOperation = "source-over";
+        context.ui.font = '32px Courier';
+        context.ui.fillStyle = "#eee";
+
+        let hs = 100;
+
+        {
+          const text = "Trees:  " + this.scoreTreeMultiplier + " * " + this.caughtTrees;
+          let m = context.ui.measureText(text);
+          context.ui.fillText(text, w/2 - m.width/2, hs);
+          hs += 40;
+        }
+
+        {
+          const text = "Humans: " + this.scoreHumanMultiplier + " * " + this.caughtHumans;
+          let m = context.ui.measureText(text);
+          context.ui.fillText(text, w/2 - m.width/2, hs);
+          hs += 40;
+        }
+
+        {
+          const text = "Cows:   " + this.scoreCowMultiplier + " * " + this.caughtCows;
+          let m = context.ui.measureText(text);
+          context.ui.fillText(text, w/2 - m.width/2, hs);
+          hs += 40;
+        }
+
+        {
+          const text = "Rocks:  " + this.scoreRockMultiplier + " * " + this.caughtRocks;
+          let m = context.ui.measureText(text);
+          context.ui.fillText(text, w/2 - m.width/2, hs);
+          hs += 40;
+        }
+
+        {
+          hs += 40;
+          const text = "Click to restart";
+          let m = context.ui.measureText(text);
+          context.ui.fillText(text, w/2 - m.width/2, hs);
+        }
+
+        this.playState = PlayState.WaitingForReset;
+      }
+    } else if (this.playState == PlayState.WaitingForReset) {
+      if (context.inputs.isButtonClicked(0)) {
+        this.playState = PlayState.ResetExit;
         new TWEEN.Tween(this)
           .to({ circleMaskRadius: 600 }, 2500)
           .easing(TWEEN.Easing.Cubic.Out)
           .delay(500)
           .start();
       }
-    } else if (this.playState == PlayState.WaitingForReset) {
+    } else if (this.playState == PlayState.ResetExit) {
       context.ui.globalCompositeOperation = "source-over";
       context.ui.fillStyle = "#222";
       context.ui.fillRect(0, 0, 800, 600);
@@ -1037,17 +1096,20 @@ export class GameState extends State<GameContext, EventId> {
             this.attractedEntities.delete(entity);
 
             if (entity instanceof Cow) {
-              this.shipLife += 10;
+              //this.shipLife += 10;
+              this.caughtCows += 1;
             } else if (entity instanceof Tree) {
-              this.shipLife += 1;
+              //this.shipLife += 1;
+              this.caughtTrees += 1;
             } else if (entity instanceof Rock) {
-              if (entity.size >= 20) {
-                this.shipLife -= 10;
-              } else {
-                this.shipLife -= 5;
-              }
+              // if (entity.size >= 20) {
+              //   this.shipLife -= 10;
+              // } else {
+              //   this.shipLife -= 5;
+              // }
+              this.caughtRocks += 1;
             } else if (entity instanceof Tank) {
-              this.shipLife -= 8;
+              //this.shipLife -= 8;
             }
           } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
@@ -1065,13 +1127,13 @@ export class GameState extends State<GameContext, EventId> {
 
     // Update ship life
     if (!this.isPaused) {
-      this.shipLife -= this.shipLifeDownFactor;
-      this.shipLife = clamp(this.shipLife, 0, 100);
+      // this.shipLife -= this.shipLifeDownFactor;
+      // this.shipLife = clamp(this.shipLife, 0, 100);
       this.shipLifeBar.scale.y = this.shipLife / 100;
       this.shipLifeBar.position.x = -60 + 60 * this.shipLifeBar.scale.y;
     }
 
-    if (this.playState == PlayState.Playing && this.shipLife == 0) {
+    if (this.playState == PlayState.Playing && this.shipLife <= 0) {
       this.isPaused = true;
       this.playState = PlayState.DeathEnter;
       if (this.beamSfx && this.beamSfx.isPlaying) {
