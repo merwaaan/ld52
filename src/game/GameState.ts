@@ -304,7 +304,7 @@ export class GameState extends State<GameContext, EventId> {
         this.titleSprite = new Three.Sprite(m);
 
         this.titleSprite.position.set(0, 0, -100);
-        this.titleSprite.scale.setScalar(300);
+        this.titleSprite.scale.setScalar(450);
 
         this.cameraCamera.add(this.titleSprite);
       });
@@ -747,7 +747,7 @@ export class GameState extends State<GameContext, EventId> {
 
     //
 
-    this.circleMaskRadius = 80;
+    this.circleMaskRadius = 100;
     this.playState = PlayState.IntroEnter;
     this.isPaused = true;
   }
@@ -1034,18 +1034,18 @@ export class GameState extends State<GameContext, EventId> {
   update(context: GameContext, doTransition: (eventId: EventId) => void) {
     if (this.playState == PlayState.IntroEnter) {
       const f0 = new TWEEN.Tween(this)
-        .to({ circleMaskRadius: 200 }, 2500)
+        .to({ circleMaskRadius: 250 }, 2500)
         .easing(TWEEN.Easing.Cubic.Out)
         .delay(3500);
 
       const f1 = new TWEEN.Tween(this)
-        .to({ circleMaskRadius: 600 }, 3000)
+        .to({ circleMaskRadius: 620 }, 3000)
         .easing(TWEEN.Easing.Cubic.Out)
         .delay(3000);
 
       this.titleSprite.material.opacity = 1;
       const f2 = new TWEEN.Tween(this.titleSprite.material)
-        .to({ opacity: 0 }, 3000)
+        .to({ opacity: 0 }, 5000)
         .easing(TWEEN.Easing.Cubic.Out)
         .delay(3000);
 
