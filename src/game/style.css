@@ -16,10 +16,10 @@ canvas {
   display: block;
   margin: auto;
   margin-bottom: 80px;
-  background-color: #222;
 }
 
 #container {
+  position: relative;
   background-color: #222;
   margin: auto;
   width: 800px;
@@ -27,11 +27,17 @@ canvas {
 }
 
 #startPrompt {
-  font-size: 32px;
+  font-size: 50px;
+  font-family: "Courier", monospace;
   display: block;
   margin: 0;
   padding-top: 300px;
   text-align: center;
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
 }
 
 a {

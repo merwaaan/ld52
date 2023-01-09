@@ -58,6 +58,7 @@ export type GameContext = {
   renderer: THREE.WebGLRenderer;
   inputs: Inputs;
   gui: dat.GUI | undefined;
+  ui: CanvasRenderingContext2D;
   assets: typeof assets;
 };
 
@@ -70,10 +71,16 @@ function setup() {
   if (startPrompt)
     startPrompt.style.display = 'none';
 
+  const canvasUI = document.getElementById("overlay") as HTMLCanvasElement;
+  canvasUI.width = 800;
+  canvasUI.height = 600;
+  const uiContext = canvasUI.getContext('2d')!;
+
   const gameContext: GameContext = {
     renderer: new THREE.WebGLRenderer({ antialias: true }),
     inputs: new Inputs(),
     gui: DEBUG ? new dat.GUI() : undefined,
+    ui: uiContext,
     assets,
   };
 
