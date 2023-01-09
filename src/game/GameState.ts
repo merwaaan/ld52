@@ -136,6 +136,7 @@ export class GameState extends State<GameContext, EventId> {
 
       const gameplayOptions = context.gui.addFolder("Gameplay");
       gameplayOptions.add(this, "shipLife", 0, 100);
+      gameplayOptions.add(this, "planetSpeed", 0, 0.006);
     }
 
     // Setup scene

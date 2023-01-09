@@ -9,7 +9,7 @@ import { GameContext } from "./main";
 import { Tree } from "./Tree";
 import { Rock } from "./Rock";
 import { Barn } from "./Barn";
-import { weightedRandom } from "../utils";
+import { randomBetween, weightedRandom } from "../utils";
 import { Tank } from "./Tank";
 import { Human } from "./Human";
 
@@ -79,38 +79,27 @@ export class World {
   spawnedEntities: Entity[] = [];
 
   constructor() {
-    // const desc = [
-    //   rock(-0.03),
-    //   rock(-0.027),
-    //   rock(-0.025),
-    //   rock(-0.023),
-    //   rock(-0.021),
-    //   rock(-0.017),
-    //   rock(-0.015),
-    //   rock(-0.012),
-    //   rock(-0.002),
-    //   tree(0),
-    //   cow(0.03),
-    //   barn(0.05),
-    //   tree(0.01),
-    //   rock(0.012),
-    //   rock(0.015),
-    //   tree(0.025),
-    //   tree(0.028),
-    //   rock(0.03),
-    //   tree(0.06),
-    //   tree(0.08),
-    //   rock(0.09),
-    //   tree(0.1),
-    // ];
-    // this.entitiesToSpawn = desc;
+    const desc = [
+      medRock(-0.03),
+      bigRock(-0.02),
+      tree(0.01),
+      tree(0.03),
+      medRock(0.05),
 
-    this.entitiesToSpawn = this.generateNewEntities(-0.05);
+      cow(0.08),
+      tree(0.09),
+      cow(0.1),
+    ];
+    this.entitiesToSpawn = desc;
+
+    //this.entitiesToSpawn = this.generateNewEntities(-0.05);
   }
 
   generateNewEntities(t: number): EntityDesc[] {
     let desc = [];
-    const tInc = 0.01;
+    const tInc = 0.02;
+
+    t += tInc;
 
     //console.log("genlevel", t);
 
@@ -118,39 +107,38 @@ export class World {
     if (t < 0.5) {
       //console.log("level 1");
       p = [
-        [smallRock, 15],
-        [medRock, 10],
-        [bigRock, 3],
-        [tree, 13],
-        [bigTree, 2],
-        [cow, 40],
-        [barn, 3],
+        [smallRock, 10],
+        [medRock, 15],
+        [bigRock, 5],
+        [tree, 15],
+        [bigTree, 5],
+        [cow, 20],
         [tank, 5],
-        [human, 5],
+        [human, 15],
       ];
     } else if (t < 1) {
       //console.log("level 2");
       p = [
-        [smallRock, 15],
-        [medRock, 10],
-        [bigRock, 3],
-        [tree, 13],
-        [bigTree, 2],
-        [cow, 30],
-        [barn, 3],
-        [tank, 10],
+        [smallRock, 10],
+        [medRock, 15],
+        [bigRock, 5],
+        [tree, 15],
+        [bigTree, 5],
+        [cow, 20],
+        [tank, 20],
+        [human, 15],
       ];
     } else {
       //console.log("level 3");
       p = [
         [smallRock, 10],
-        [medRock, 15],
-        [bigRock, 3],
+        [medRock, 10],
+        [bigRock, 5],
         [tree, 10],
         [bigTree, 5],
-        [cow, 20],
-        [barn, 2],
-        [tank, 20],
+        [cow, 10],
+        [tank, 40],
+        [human, 15],
       ];
     }
 
@@ -160,7 +148,7 @@ export class World {
       if (f) {
         desc.push(f(t));
       }
-      t += tInc;
+      t += tInc + 0.01 * randomBetween(-1, 1);
     }
 
     return desc;
@@ -272,8 +260,9 @@ export class World {
       this.spawn(entityDesc, state, context);
 
       if (this.entitiesToSpawn.length == 0) {
-        for (const e of this.generateNewEntities(entityDesc.position))
+        for (const e of this.generateNewEntities(entityDesc.position)) {
           this.entitiesToSpawn.push(e);
+        }
       }
     }
 
