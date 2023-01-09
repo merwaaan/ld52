@@ -123,6 +123,7 @@ export class GameState extends State<GameContext, EventId> {
   soundBgm: Three.Audio | undefined;
   beamSfx: Three.Audio | undefined;
   shipSfx: Three.Audio | undefined;
+  hitSfx: Three.Audio | undefined;
 
   physics: Matter.Engine;
   physicsRenderer: Matter.Render;
@@ -472,6 +473,9 @@ export class GameState extends State<GameContext, EventId> {
 
             this.shipLife -= 10;
             this.cameraShake();
+            if (this.hitSfx) {
+              this.hitSfx.play();
+            }
             this.shipLife = clamp(this.shipLife, 0, 100);
             const bulletEntity = this.world.lookupEntity(bullet);
             if (bulletEntity) {
@@ -673,6 +677,10 @@ export class GameState extends State<GameContext, EventId> {
       this.shipSfx.setLoop(true);
       this.shipSfx.setVolume(0.04);
       //this.shipSfx.play();
+
+      this.hitSfx = new Three.Audio(listener);
+      this.hitSfx.setBuffer(assets.sound("hit"));
+      this.hitSfx.setVolume(0.18);
     });
 
     // Post
