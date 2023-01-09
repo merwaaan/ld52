@@ -1,5 +1,5 @@
 import { State } from "../StateMachine";
-import { EventId, GameContext } from "./test";
+import { EventId, GameContext } from "./main";
 
 export class MenuState extends State<GameContext, EventId> {
   private _loaded = false;

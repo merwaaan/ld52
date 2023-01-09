@@ -2,7 +2,7 @@ import * as Matter from "matter-js";
 import * as Three from "three";
 
 import { Entity } from "./Entity";
-import { GameContext } from "./test";
+import { GameContext } from "./main";
 import { planetAttraction, randomBetween } from "../utils";
 
 export class Tree extends Entity {

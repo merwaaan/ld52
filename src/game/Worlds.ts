@@ -5,7 +5,7 @@ import { Cow } from "./Cow";
 import { GameState } from "./GameState";
 import { House } from "./House";
 import { Entity } from "./Entity";
-import { GameContext } from "./test";
+import { GameContext } from "./main";
 import { Tree } from "./Tree";
 import { Rock } from "./Rock";
 import { Barn } from "./Barn";

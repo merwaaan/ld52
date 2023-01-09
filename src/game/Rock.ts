@@ -3,7 +3,7 @@ import * as Three from "three";
 import { planetAttraction, randomBetween } from "../utils";
 
 import { Entity } from "./Entity";
-import { GameContext } from "./test";
+import { GameContext } from "./main";
 
 export class Rock extends Entity {
   model: Three.Object3D;

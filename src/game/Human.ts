@@ -3,7 +3,7 @@ import * as Three from "three";
 import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils";
 
 import { Entity } from "./Entity";
-import { GameContext } from "./test";
+import { GameContext } from "./main";
 import { planetAttraction, randomBetween } from "../utils";
 import { GameState } from "./GameState";
 import { angleToWorldSpace, World } from "./Worlds";

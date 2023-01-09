@@ -1,9 +1,9 @@
 {
   "name": "gamejam-starterkit",
   "scripts": {
-    "start": "parcel src/example/index.html",
-    "build": "parcel build src/example/index.html",
-    "fast-build": "parcel build src/example/index.html --no-optimize",
+    "start": "parcel src/game/index.html",
+    "build": "parcel build src/game/index.html --public-url /ld52",
+    "fast-build": "parcel build src/game/index.html --no-optimize --public-url /dist",
     "check": "tsc --noEmit"
   },
   "devDependencies": {

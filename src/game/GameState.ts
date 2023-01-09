@@ -10,7 +10,7 @@ import { MatterAttractors } from "./MatterAttractors";
 
 import { EntityState } from "./Entity";
 import { State } from "../StateMachine";
-import { DEBUG, EventId, GameContext } from "./test";
+import { DEBUG, EventId, GameContext } from "./main";
 import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
 import { barn, cow, house, tank, tree, World } from "./Worlds";
