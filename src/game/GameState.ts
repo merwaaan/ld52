@@ -448,7 +448,7 @@ export class GameState extends State<GameContext, EventId> {
         const eye = this.ship.getObjectByName("eye");
       });
 
-      this.shipPhysics = Matter.Bodies.rectangle(0, 0, 160, 60, {
+      this.shipPhysics = Matter.Bodies.rectangle(0, 0, 140, 30, {
         isStatic: true,
         isSensor: true,
         collisionFilter: {
