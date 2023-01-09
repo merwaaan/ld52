@@ -2,6 +2,7 @@ import * as Three from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
+import { FilmPass } from "three/examples/jsm/postprocessing/FilmPass";
 import * as TWEEN from "@tweenjs/tween.js";
 import Matter from "matter-js";
 import { createNoise2D } from "simplex-noise";
@@ -11,7 +12,7 @@ import { MatterAttractors } from "./MatterAttractors";
 import { EntityState } from "./Entity";
 import { State } from "../StateMachine";
 import { DEBUG, EventId, GameContext } from "./main";
-import { clamp, computeNormalizedPosition } from "../utils";
+import { clamp, computeNormalizedPosition, randomBetween } from "../utils";
 import { House } from "./House";
 import { barn, cow, house, tank, tree, World } from "./Worlds";
 import { Entity } from "./Entity";
@@ -20,6 +21,7 @@ import { Cow } from "./Cow";
 import { Rock } from "./Rock";
 import { Tree } from "./Tree";
 import { Tank } from "./Tank";
+import { bwMaterial, colors, bwMaterialUnlit, bw } from "./colors";
 
 const shipParams = {
   accelFactor: 1.22,
@@ -46,8 +48,7 @@ export class GameState extends State<GameContext, EventId> {
 
   cameraPivot: Three.Group;
   camera: Three.Camera;
-  //composer: EffectComposer;
-  carModel: Three.Object3D | undefined;
+  composer: EffectComposer;
 
   ship: Three.Object3D;
   shipPhysics: Matter.Body;
@@ -127,8 +128,13 @@ export class GameState extends State<GameContext, EventId> {
     this.cameraPivot.add(this.camera);
     this.scene.add(this.cameraPivot);
 
-    const ambientLight = new Three.AmbientLight(0x202020);
-    this.scene.add(ambientLight);
+    const ambientLight = new Three.AmbientLight(0xffffff, 0.12);
+    //this.scene.add(ambientLight);
+
+    const light = new Three.DirectionalLight(0xffffff, 0.05);
+    light.position.set(-500, this.planetRadius + 500, 500);
+    light.target.position.set(0, 0, 0);
+    this.scene.add(light);
 
     const axesHelper = new Three.AxesHelper(50);
     this.scene.add(axesHelper);
@@ -152,13 +158,9 @@ export class GameState extends State<GameContext, EventId> {
 
     // Ground
     const geometry = new Three.SphereGeometry(this.planetRadius, 64, 64);
-    const material = new Three.MeshLambertMaterial({
-      color: 0xffff80,
-      emissive: 0x000000,
-    });
-    material.flatShading = true;
-    //material.wireframe = true;
-    const circle = new Three.Mesh(geometry, material);
+    const mat = bwMaterial(colors["ground"]);
+    mat.flatShading = true;
+    const circle = new Three.Mesh(geometry, mat);
     this.scene.add(circle);
 
     // Background layers
@@ -166,11 +168,13 @@ export class GameState extends State<GameContext, EventId> {
     {
       const noise = createNoise2D();
 
-      const layerColors = [0x3a0ca3, 0x480ca8, 0x560bad];
+      const layerColors = [colors["bg1"], colors["bg2"], colors["bg3"]];
+      const layerHeights = [70, 120, 150];
+      const layerHeightDeltas = [25, 10, 10];
 
-      for (let layer = 0; layer < 3; ++layer) {
-        const layerHeight = this.planetRadius + 50 * (layer + 1);
-        const layerHeightDelta = 25;
+      for (let layer = 0; layer < layerColors.length; ++layer) {
+        const layerHeight = this.planetRadius + layerHeights[layer];
+        const layerHeightDelta = layerHeightDeltas[layer];
 
         const shape = new Three.Shape();
 
@@ -192,14 +196,66 @@ export class GameState extends State<GameContext, EventId> {
         shape.closePath();
 
         const geometry = new Three.ShapeGeometry(shape);
-        const material = new Three.MeshBasicMaterial({
-          color: layerColors[layer],
-        });
+        const material = bwMaterialUnlit(layerColors[layer]);
         const mesh = new Three.Mesh(geometry, material);
+
         // Move back layers to avoid clipping with entities geometry
         mesh.position.z = -(layer + 1) * 1000;
         this.scene.add(mesh);
       }
+    }
+
+    // Moon
+
+    {
+      const g = new Three.SphereGeometry(200);
+      const m = new Three.MeshBasicMaterial({ color: bw(0.9) });
+      const moon = new Three.Mesh(g, m);
+      this.camera.add(moon);
+      moon.position.set(-400, 300, -5000);
+    }
+
+    // Clouds
+
+    {
+      context.assets.onReady((assets) => {
+        // @ts-ignore
+        const cloud = (texName) => {
+          const map = assets.texture(texName);
+          const material = new Three.SpriteMaterial({
+            map: map,
+            opacity: randomBetween(0.3, 0.7),
+          });
+          const sprite = new Three.Sprite(material);
+
+          const sw = 700;
+
+          const x = randomBetween(-sw, sw);
+          const y = randomBetween(0, 300);
+          sprite.position.set(x, y, -500);
+
+          const s = randomBetween(1, 2);
+          sprite.scale.setScalar(s * 300);
+
+          sprite.rotateZ(Math.random() * 2 * Math.PI);
+
+          this.camera.add(sprite);
+
+          const destx = randomBetween(-sw, sw);
+          const speed = randomBetween(30000, 60000);
+
+          new TWEEN.Tween(sprite.position)
+            .to({ x: destx }, speed)
+            .yoyo(true)
+            .repeat(Infinity)
+            //.easing(TWEEN.Easing.Elastic.Out)
+            .start();
+        };
+
+        for (let i = 0; i < 3; ++i) cloud("cloud1");
+        for (let i = 0; i < 3; ++i) cloud("cloud2");
+        for (let i = 0; i < 3; ++i) cloud("cloud3");
+      });
     }
 
     // Ship
@@ -213,10 +269,7 @@ export class GameState extends State<GameContext, EventId> {
         this.ship.add(shipModel);
         shipModel.traverse((child) => {
           if (child instanceof Three.Mesh) {
-            child.material = new Three.MeshLambertMaterial({
-              color: 0x404040,
-              emissive: 0x00404f,
-            });
+            child.material = bwMaterial(0.6);
           }
         });
       });
@@ -378,20 +431,19 @@ export class GameState extends State<GameContext, EventId> {
     // Physics debugger
     {
       if (DEBUG) {
-        this.physicsRenderer = Matter.Render.create(
-          {engine: this.physics,
-           element: document.body,
-           options: {
-          width: 400,
-          height: 400,
-          hasBounds: true,
-          showVelocity: true,
-          showSleeping: true,
-           }
-          });
+        this.physicsRenderer = Matter.Render.create({
+          engine: this.physics,
+          element: document.body,
+          options: {
+            width: 400,
+            height: 400,
+            hasBounds: true,
+            showVelocity: true,
+            showSleeping: true,
+          },
+        });
       } else {
-        this.physicsRenderer = Matter.Render.create(
-          {engine: this.physics});
+        this.physicsRenderer = Matter.Render.create({ engine: this.physics });
       }
     }
 
@@ -427,6 +479,14 @@ export class GameState extends State<GameContext, EventId> {
       this.shipSfx.setVolume(0.04);
       this.shipSfx.play();
     });
+
+    // Post
+
+    this.composer = new EffectComposer(context.renderer);
+    const renderPass = new RenderPass(this.scene, this.camera);
+    const filmPass = new FilmPass(0.6, 0.2, 100, 1);
+    this.composer.addPass(renderPass);
+    this.composer.addPass(filmPass);
   }
 
   enter(context: GameContext) {}
@@ -555,8 +615,7 @@ export class GameState extends State<GameContext, EventId> {
       this.shipIsGrabbing = !this.shipIsGrabbing;
 
       if (this.shipIsGrabbing) {
-        if (this.beamSfx)
-          this.beamSfx.play();
+        if (this.beamSfx) this.beamSfx.play();
 
         new TWEEN.Tween(this.shipRay.scale)
           .to({ x: 1 }, shipParams.beamOpenSpeed)
@@ -572,8 +631,7 @@ export class GameState extends State<GameContext, EventId> {
           .easing(TWEEN.Easing.Elastic.Out)
           .start();
       } else {
-        if (this.beamSfx)
-          this.beamSfx.stop();
+        if (this.beamSfx) this.beamSfx.stop();
 
         new TWEEN.Tween(this.shipRay.scale)
           .to({ x: shipParams.attractRayOffScale }, shipParams.beamCloseSpeed)
@@ -729,6 +787,7 @@ export class GameState extends State<GameContext, EventId> {
 
     // Render
 
-    context.renderer.render(this.scene, this.camera);
+    this.composer.render();
+    //context.renderer.render(this.scene, this.camera);
   }
 }

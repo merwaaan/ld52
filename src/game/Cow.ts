@@ -1,9 +1,11 @@
 import * as Matter from "matter-js";
 import * as Three from "three";
+import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils";
 
 import { Entity } from "./Entity";
 import { GameContext } from "./main";
 import { planetAttraction, randomBetween } from "../utils";
+import { assignMaterial, bwMaterial, colors } from "./colors";
 
 export class Cow extends Entity {
   model: Three.Object3D;
@@ -23,34 +25,27 @@ export class Cow extends Entity {
       //isStatic: true,
       plugin: planetAttraction(),
 
-        friction: 1,
-        frictionAir: 0.01,
-        mass: 1,
-        inverseMass: 1,
+      friction: 1,
+      frictionAir: 0.01,
+      mass: 1,
+      inverseMass: 1,
     });
 
     context.assets.onReady((assets) => {
-      const cowModel = context.assets.model("cow").clone();
+      const cowModel = SkeletonUtils.clone(assets.model("cow"));
+
+      const a = assets.model("cow").animations;
       cowModel.translateY(-scale / 2);
       cowModel.scale.set(scale, scale, scale);
 
-      cowModel.traverse((child) => {
-        if (child instanceof Three.Mesh) {
-          child.material = new Three.MeshBasicMaterial({
-            color: 0xff0000,
-          });
-        }
-      });
+      assignMaterial(cowModel, bwMaterial(colors["cow"]));
 
       this.model.add(cowModel);
 
       // Anim
 
       this.mixer = new Three.AnimationMixer(cowModel);
-      const idleClip = Three.AnimationClip.findByName(
-        cowModel.animations,
-        "eat"
-      );
+      const idleClip = Three.AnimationClip.findByName(a, "eat");
 
       this.idleAction = this.mixer.clipAction(idleClip);
       this.idleAction?.play();
@@ -62,7 +57,6 @@ export class Cow extends Entity {
   }
 
   grab(): void {
-    console.log("moo");
     // TODO panic anim
   }
 }

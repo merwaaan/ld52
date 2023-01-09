@@ -12,6 +12,9 @@ import { MenuState as LoadState } from "./LoadState";
 // Assets
 
 import barnModelPath from "url:./assets/barn.obj";
+import cloud1TexPath from "url:./assets/cloud1.png";
+import cloud2TexPath from "url:./assets/cloud2.png";
+import cloud3TexPath from "url:./assets/cloud3.png";
 import cowModelPath from "url:./assets/cow.glb";
 import humanModelPath from "url:./assets/human.glb";
 import rockModelPath from "url:./assets/rock.obj";
@@ -38,6 +41,12 @@ const assets = new Assets({
     bg: bgSfxPath,
     beam: beamSfxPath,
     ship: shipSfxPath,
+  },
+
+  textures: {
+    cloud1: cloud1TexPath,
+    cloud2: cloud2TexPath,
+    cloud3: cloud3TexPath,
   },
 });
 
@@ -108,4 +117,5 @@ function setup() {
   });
 }
 
-document.addEventListener("click", setup);
+//document.addEventListener("click", setup);
+setup();

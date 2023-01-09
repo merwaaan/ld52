@@ -4,6 +4,7 @@ import * as Three from "three";
 import { Entity } from "./Entity";
 import { GameContext } from "./main";
 import { planetAttraction, randomBetween } from "../utils";
+import { assignMaterial, bwMaterial, colors } from "./colors";
 
 export class Tree extends Entity {
   model: Three.Object3D;
@@ -16,11 +17,6 @@ export class Tree extends Entity {
 
     const horizontalScale = size * randomBetween(0.8, 1.2);
     const verticalScale = size * randomBetween(0.7, 1.3);
-
-    const treeModel = context.assets.model("tree").clone();
-    treeModel.translateY(-verticalScale / 2);
-    treeModel.scale.set(horizontalScale, verticalScale, horizontalScale);
-    this.model.add(treeModel);
 
     const isStatic = size > 100;
 
@@ -38,6 +34,14 @@ export class Tree extends Entity {
         plugin: planetAttraction(),
       }
     );
+
+    context.assets.onReady((assets) => {
+      const treeModel = context.assets.model("tree").clone();
+      treeModel.translateY(-verticalScale / 2);
+      treeModel.scale.set(horizontalScale, verticalScale, horizontalScale);
+      assignMaterial(treeModel, bwMaterial(colors["tree"]));
+      this.model.add(treeModel);
+    });
   }
 
   update() {}

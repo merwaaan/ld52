@@ -7,6 +7,7 @@ import { planetAttraction, randomBetween } from "../utils";
 import { GameState } from "./GameState";
 import { World } from "./Worlds";
 import { bulletCollisionCat } from "./physics";
+import { assignMaterial, bwMaterial, colors } from "./colors";
 
 function delay() {
   return randomBetween(1, 3);
@@ -31,6 +32,7 @@ export class Tank extends Entity {
     const tankModel = context.assets.model("tank").clone();
     tankModel.translateY(-scale / 2);
     tankModel.scale.set(scale, scale, scale);
+    assignMaterial(tankModel, bwMaterial(colors["tank"]));
 
     tankModel.traverse((child) => {
       if (child.name == "gun") {

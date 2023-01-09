@@ -1,6 +1,7 @@
 import * as Matter from "matter-js";
 import * as Three from "three";
 import { planetAttraction, randomBetween } from "../utils";
+import { assignMaterial, bwMaterial, colors } from "./colors";
 
 import { Entity } from "./Entity";
 import { GameContext } from "./main";
@@ -16,23 +17,9 @@ export class Rock extends Entity {
 
     this.model = new Three.Group();
 
-    const rockModel = context.assets.model("rock").clone();
-
+    this.size = size;
     const horizontalScale = size * randomBetween(0.7, 1.6);
     const verticalScale = size * randomBetween(0.7, 1.6);
-    this.size = size;
-
-    rockModel.translateY(-verticalScale / 2);
-
-    rockModel.scale.set(horizontalScale, verticalScale, horizontalScale);
-
-    rockModel.rotation.set(
-      Math.random() * 2 * Math.PI,
-      Math.random() * 2 * Math.PI,
-      Math.random() * 2 * Math.PI
-    );
-
-    this.model.add(rockModel);
 
     const isStatic = size > 30;
 
@@ -52,6 +39,24 @@ export class Rock extends Entity {
         plugin: planetAttraction(),
       }
     );
+
+    context.assets.onReady((assets) => {
+      const rockModel = context.assets.model("rock").clone();
+
+      rockModel.translateY(-verticalScale / 2);
+
+      rockModel.scale.set(horizontalScale, verticalScale, horizontalScale);
+
+      rockModel.rotation.set(
+        Math.random() * 2 * Math.PI,
+        Math.random() * 2 * Math.PI,
+        Math.random() * 2 * Math.PI
+      );
+
+      assignMaterial(rockModel, bwMaterial(colors["rock"]));
+
+      this.model.add(rockModel);
+    });
   }
 
   update() {}

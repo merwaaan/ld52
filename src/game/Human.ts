@@ -9,6 +9,7 @@ import { GameState } from "./GameState";
 import { angleToWorldSpace, World } from "./Worlds";
 import { bulletCollisionCat } from "./physics";
 import { Vector2, Vector3 } from "three";
+import { assignMaterial, bwMaterial, colors } from "./colors";
 
 function delay() {
   return randomBetween(3, 6);
@@ -68,18 +69,11 @@ export class Human extends Entity {
 
     context.assets.onReady((assets) => {
       const humanModel = SkeletonUtils.clone(assets.model("human"));
+      assignMaterial(humanModel, bwMaterial(colors["human"]));
 
       const a = assets.model("human").animations;
       humanModel.translateY(-scale / 2);
       humanModel.scale.set(scale, scale, scale);
-
-      //   humanModel.traverse((child) => {
-      //     if (child instanceof Three.Mesh) {
-      //       child.material = new Three.MeshBasicMaterial({
-      //         color: 0xff0000,
-      //       });
-      //     }
-      //   });
 
       this.model.add(humanModel);
 
