@@ -861,8 +861,6 @@ export class GameState extends State<GameContext, EventId> {
       context.ui.fill();
 
       if (this.circleMaskRadius == 0) {
-        this.reset();
-
         const w = 800;
         const h = 600;
 
@@ -923,6 +921,7 @@ export class GameState extends State<GameContext, EventId> {
           context.ui.fillText(text, w / 2 - m.width / 2, hs);
         }
 
+        this.reset();
         this.playState = PlayState.WaitingForReset;
       }
     } else if (this.playState == PlayState.WaitingForReset) {
