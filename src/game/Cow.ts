@@ -120,6 +120,8 @@ export class Cow extends Entity {
   }
 
   grab(): void {
+    super.grab();
+
     this.mode = "panic";
     this.anim();
   }

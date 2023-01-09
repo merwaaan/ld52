@@ -51,6 +51,8 @@ export class Tank extends Entity {
   }
 
   grab() {
+    super.grab();
+
     console.log("grabbed");
   }
 

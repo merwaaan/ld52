@@ -20,15 +20,14 @@ export class Human extends Entity {
   physics: Matter.Body;
 
   mode:
-    | { type: "idle" }
-    | { type: "panic" }
-    | { type: "walk"; goingLeft: boolean };
+    | { type: "grabbed" }
+    | { type: "falling" }
+    | { type: "run"; goingLeft: boolean };
 
   nextModeDelay: number = delay();
 
   mixer?: Three.AnimationMixer;
-  idleAction?: Three.AnimationAction;
-  walkAction?: Three.AnimationAction;
+  runAction?: Three.AnimationAction;
   panicAction?: Three.AnimationAction;
 
   constructor(x: number, y: number, context: GameContext, state: GameState) {
@@ -38,39 +37,16 @@ export class Human extends Entity {
 
     const scale = 50;
 
-    this.physics = Matter.Bodies.rectangle(x, -y, scale, scale, {
+    this.physics = Matter.Bodies.rectangle(x, -y - 30, scale, scale, {
       isStatic: true,
-      //frictionAir: 0.01,
-
-      friction: 1,
+      friction: 10,
       frictionAir: 0.01,
       mass: 1,
       inverseMass: 1,
+      plugin: planetAttraction(),
     });
-    //Matter.Body.setMass(this.physics, 1);
 
-    // const sensor = Matter.Bodies.rectangle(x - 50, -y, scale, scale, {
-    //   //isStatic: true,
-    //   //frictionAir: 0.01,
-    // });
-    // Matter.Body.setMass(this.physics, 1);
-
-    // const constraint = Matter.Constraint.create({
-    //   //bodyA: this.physics,
-    //   pointA: { x: x, y: -y },
-    //   bodyB: sensor,
-    //   //pointB: { x: 0, y: 0 },
-    //   length: 0,
-    // });
-    // this.otherPhysics.push(sensor, constraint);
-
-    // Matter.Events.on(state.physics, "collisionStart", (event) => {
-    //   console.log(event.pairs.length);
-    // });
-
-    this.mode = { type: "walk", goingLeft: true }; /*{
-        type: "idle",
-      }*/
+    this.mode = { type: "run", goingLeft: true };
 
     context.assets.onReady((assets) => {
       const humanModel = SkeletonUtils.clone(assets.model("human"));
@@ -86,16 +62,13 @@ export class Human extends Entity {
 
       this.mixer = new Three.AnimationMixer(humanModel);
 
-      const idleClip = Three.AnimationClip.findByName(a, "idle");
-      this.idleAction = this.mixer.clipAction(idleClip);
-
-      const walkClip = Three.AnimationClip.findByName(a, "walk");
-      this.walkAction = this.mixer.clipAction(walkClip);
-      this.walkAction!.timeScale = 5;
+      const runClip = Three.AnimationClip.findByName(a, "flee");
+      this.runAction = this.mixer.clipAction(runClip);
+      this.runAction!.timeScale = 2;
 
       const panicClip = Three.AnimationClip.findByName(a, "panic");
       this.panicAction = this.mixer.clipAction(panicClip);
-      this.panicAction!.timeScale = 5;
+      this.panicAction!.timeScale = 2;
 
       this.anim();
     });
@@ -103,102 +76,119 @@ export class Human extends Entity {
 
   anim() {
     switch (this.mode.type) {
-      case "idle":
-        this.idleAction?.play();
-        this.walkAction?.stop();
-        this.panicAction?.stop();
-        break;
-      case "walk":
-        this.idleAction?.stop();
-        this.walkAction?.play();
+      case "run":
+        this.runAction?.play();
         this.panicAction?.stop();
 
-        const dir = this.mode.goingLeft ? this.dirLeft() : this.dirRight();
-        const target = this.model.children[0].position
-          .clone()
-          .add(dir.multiplyScalar(10));
-
-        this.model.children[0].lookAt(target);
+        this.model.children[0].rotation.y =
+          (Math.PI / 2) * (this.mode.goingLeft ? 1 : -1) * 0.8;
         break;
-      case "panic":
-        this.idleAction?.stop();
-        this.walkAction?.stop();
+      case "grabbed":
+      case "falling":
+        this.runAction?.stop();
         this.panicAction?.play();
 
-        this.model.children[0].lookAt(new Vector3(0, 1000, 500));
+        this.model.children[0].rotation.y = 0;
         break;
     }
   }
 
   grab() {
-    //this.mode = { type: "panic" };
+    super.grab();
+
+    this.mode = { type: "grabbed" };
+    this.anim();
+
+    Matter.Body.setStatic(this.physics, false);
+  }
+
+  release() {
+    super.release();
+
+    this.mode = { type: "falling" };
+    this.anim();
+
+    //Matter.Body.setStatic(this.physics, false);
   }
 
   update(state: GameState, world: World) {
     const dt = 1 / 60;
 
-    // Check ray
-
-    Matter.Body.setStatic(this.physics, false);
-    const d = Matter.Detector.create({
-      bodies: [this.physics, state.shipRayPhysics],
-    });
-    const collisions = Matter.Detector.collisions(d);
-
-    const collidesWithRay = collisions.some(
-      (c) => c.bodyA == state.shipRayPhysics || c.bodyB == state.shipRayPhysics
-    );
-
-    if (collidesWithRay) {
-      //this.mode = { type: "panic" };
-      //this.anim();
-    } else {
-    }
-    Matter.Body.setStatic(this.physics, true);
-
     // State update
 
     switch (this.mode.type) {
-      case "idle":
-        this.nextModeDelay -= dt;
+      case "run":
+        // Move
 
-        if (this.nextModeDelay < 0) {
-          this.mode = { type: "walk", goingLeft: Math.random() > 0.5 };
-          this.nextModeDelay = delay();
-          this.anim();
-        }
-        break;
-
-      case "walk":
-        /*const force = this.mode.goingLeft ? this.dirLeft() : this.dirRight();
-        force.multiplyScalar(0.00001);
-        Matter.Body.applyForce(this.physics, this.physics.position, {
-          x: force.x,
-          y: -force.y,
-        });*/
+        const runSpeed = 0.004;
 
         const pos = new Three.Vector3(
           this.physics.position.x,
           -this.physics.position.y
         );
         const angle = pos.angleTo(new Three.Vector3(0, 1, 0));
-        const newAngle = angle + 0.001;
+        const newAngle = angle + runSpeed * (this.mode.goingLeft ? 1 : -1);
         const newPos = angleToWorldSpace(newAngle, state.planetRadius);
 
         Matter.Body.setPosition(this.physics, { x: newPos.x, y: -newPos.y });
 
+        // Collide with ray
+
+        Matter.Body.setStatic(this.physics, false);
+        const d = Matter.Detector.create({
+          bodies: [this.physics, state.shipRayPhysics],
+        });
+        const collisions = Matter.Detector.collisions(d);
+
+        const collidesWithRay = collisions.some(
+          (c) =>
+            c.bodyA == state.shipRayPhysics || c.bodyB == state.shipRayPhysics
+        );
+
+        if (!collidesWithRay) {
+          //Matter.Body.setStatic(this.physics, true);
+        }
+
+        // Timer
+
         this.nextModeDelay -= dt;
 
         if (this.nextModeDelay < 0) {
-          this.mode = { type: "idle" };
+          this.mode = { type: "run", goingLeft: !this.mode.goingLeft };
           this.nextModeDelay = delay();
           this.anim();
         }
 
         break;
 
-      case "panic":
+      case "grabbed":
         // TODO
+        break;
+
+      case "falling":
+        const toCenter = this.physics.position;
+        const g = Matter.Vector.mult(Matter.Vector.neg(toCenter), 0.00001);
+
+        Matter.Body.applyForce(this.physics, this.physics.position, g);
+
+        // Collide with ground
+
+        const d_ = Matter.Detector.create({
+          bodies: [this.physics, state.planetPhysics],
+        });
+        const collisions_ = Matter.Detector.collisions(d_);
+
+        const collidesWithGround = collisions_.some(
+          (c) =>
+            c.bodyA == state.planetPhysics || c.bodyB == state.planetPhysics
+        );
+
+        if (collidesWithGround) {
+          this.mode = { type: "run", goingLeft: true };
+          this.anim();
+          Matter.Body.setStatic(this.physics, true);
+        }
+
         break;
     }
 

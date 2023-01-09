@@ -19,8 +19,19 @@ export abstract class Entity {
 
   abstract update(state: GameState, world: World): void;
 
-  grab(): void {}
-  release(): void {}
+  _grabbed: boolean = false;
+
+  get grabbed() {
+    return this._grabbed;
+  }
+
+  grab(): void {
+    this._grabbed = true;
+  }
+
+  release(): void {
+    this._grabbed = false;
+  }
 
   dirFromCenter(): Three.Vector3 {
     return this.model.position.clone().normalize();

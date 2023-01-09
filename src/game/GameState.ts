@@ -129,6 +129,7 @@ export class GameState extends State<GameContext, EventId> {
   planetRadius: number = 1000;
   planetSpeed: number = 0.002;
   planetRotation: number = 0;
+  planetPhysics: Matter.Body;
 
   shipVelocity: Three.Vector2;
   shipIsGrabbing: boolean = false;
@@ -225,7 +226,7 @@ export class GameState extends State<GameContext, EventId> {
     this.physics = Matter.Engine.create();
     this.physics.gravity.scale = 0;
 
-    var ground = Matter.Bodies.circle(
+    this.planetPhysics = Matter.Bodies.circle(
       0,
       0,
       this.planetRadius,
@@ -234,7 +235,7 @@ export class GameState extends State<GameContext, EventId> {
       },
       100
     );
-    Matter.Composite.add(this.physics.world, [ground]);
+    Matter.Composite.add(this.physics.world, [this.planetPhysics]);
 
     // Ground
     {
@@ -428,11 +429,11 @@ export class GameState extends State<GameContext, EventId> {
         });
 
         applyMat("eye1", {
-          emissive: 0xff0000,
+          emissive: 0xffff00,
         });
 
         applyMat("eye2", {
-          emissive: 0xff0000,
+          emissive: 0xffff00,
         });
 
         const head = this.ship.getObjectByName("head") as
@@ -501,7 +502,7 @@ export class GameState extends State<GameContext, EventId> {
       const geometry = new Three.ConeGeometry(width, height, 32);
       const material = new Three.MeshBasicMaterial({ color: 0xffff00 });
       material.transparent = true;
-      material.opacity = 0.5;
+      material.opacity = 0.25;
       this.shipRay = new Three.Mesh(geometry, material);
       this.shipRay.position.y = -height / 2;
       this.shipRay.scale.x = shipParams.attractRayOffScale;
@@ -543,8 +544,13 @@ export class GameState extends State<GameContext, EventId> {
 
             const entity = this.world.entityFromPhysics(other);
             if (entity) {
+              const isNew = !this.attractedEntities.has(entity);
+
               this.attractedEntities.add(entity);
-              entity.grab();
+
+              if (isNew && this.shipIsGrabbing && !entity.grabbed) {
+                entity.grab();
+              }
             }
           }
         }
@@ -565,8 +571,13 @@ export class GameState extends State<GameContext, EventId> {
 
             const entity = this.world.entityFromPhysics(other);
             if (entity) {
+              const wasRegistered = this.attractedEntities.has(entity);
+
               this.attractedEntities.delete(entity);
-              entity.release();
+
+              if (wasRegistered && entity.grabbed) {
+                entity.release();
+              }
             }
           }
         }
@@ -580,7 +591,7 @@ export class GameState extends State<GameContext, EventId> {
 
     // Ship light
     {
-      const spotLight = new Three.SpotLight(0x00a0af);
+      const spotLight = new Three.SpotLight(0xa0a0a0);
       spotLight.angle = Math.PI / 6;
       spotLight.intensity = 0.5;
       spotLight.penumbra = 0.2;
@@ -614,6 +625,7 @@ export class GameState extends State<GameContext, EventId> {
             height: 400,
             hasBounds: true,
             showVelocity: true,
+
             showSleeping: true,
           },
         });
@@ -624,7 +636,7 @@ export class GameState extends State<GameContext, EventId> {
 
     Matter.Render.lookAt(
       this.physicsRenderer,
-      ground,
+      this.planetPhysics,
       Matter.Vector.create(200, 500)
     );
     Matter.Render.run(this.physicsRenderer);
@@ -825,7 +837,7 @@ export class GameState extends State<GameContext, EventId> {
         const h = 600;
 
         context.ui.globalCompositeOperation = "source-over";
-        context.ui.font = '32px Courier';
+        context.ui.font = "32px Courier";
         context.ui.fillStyle = "#eee";
 
         const ws = 250;
@@ -833,31 +845,35 @@ export class GameState extends State<GameContext, EventId> {
         let score = 0;
 
         {
-          const text = "Trees:  " + this.scoreTreeMultiplier + " * " + this.caughtTrees;
-          score += this.scoreTreeMultiplier* this.caughtTrees;
+          const text =
+            "Trees:  " + this.scoreTreeMultiplier + " * " + this.caughtTrees;
+          score += this.scoreTreeMultiplier * this.caughtTrees;
           context.ui.fillText(text, ws, hs);
           hs += 40;
         }
 
         {
-          const text = "Humans: " + this.scoreHumanMultiplier + " * " + this.caughtHumans;
-          score += this.scoreHumanMultiplier* this.caughtHumans;
+          const text =
+            "Humans: " + this.scoreHumanMultiplier + " * " + this.caughtHumans;
+          score += this.scoreHumanMultiplier * this.caughtHumans;
           let m = context.ui.measureText(text);
           context.ui.fillText(text, ws, hs);
           hs += 40;
         }
 
         {
-          const text = "Cows:   " + this.scoreCowMultiplier + " * " + this.caughtCows;
-          score += this.scoreCowMultiplier* this.caughtCows;
+          const text =
+            "Cows:   " + this.scoreCowMultiplier + " * " + this.caughtCows;
+          score += this.scoreCowMultiplier * this.caughtCows;
           let m = context.ui.measureText(text);
           context.ui.fillText(text, ws, hs);
           hs += 40;
         }
 
         {
-          const text = "Rocks:  " + this.scoreRockMultiplier + " * " + this.caughtRocks;
-          score += this.scoreRockMultiplier* this.caughtRocks;
+          const text =
+            "Rocks:  " + this.scoreRockMultiplier + " * " + this.caughtRocks;
+          score += this.scoreRockMultiplier * this.caughtRocks;
           let m = context.ui.measureText(text);
           context.ui.fillText(text, ws, hs);
           hs += 40;
@@ -874,7 +890,7 @@ export class GameState extends State<GameContext, EventId> {
           hs += 40;
           const text = "Click to restart";
           let m = context.ui.measureText(text);
-          context.ui.fillText(text, w/2 - m.width/2, hs);
+          context.ui.fillText(text, w / 2 - m.width / 2, hs);
         }
 
         this.playState = PlayState.WaitingForReset;
