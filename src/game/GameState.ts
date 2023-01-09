@@ -48,7 +48,7 @@ enum PlayState {
   Intro,
   IntroExit,
   Playing,
-};
+}
 
 export class GameState extends State<GameContext, EventId> {
   scene: Three.Scene;
@@ -91,6 +91,8 @@ export class GameState extends State<GameContext, EventId> {
   shipLife: number = 100;
   shipLifeDownFactor: number = 0.1;
   shipLifeBar: Three.Mesh;
+
+  titleSprite: Three.Sprite = new Three.Sprite();
 
   constructor(context: GameContext) {
     super();
@@ -215,6 +217,24 @@ export class GameState extends State<GameContext, EventId> {
         mesh.position.z = -(layer + 1) * 1000;
         this.scene.add(mesh);
       }
+    }
+
+    // Title
+
+    {
+      context.assets.onReady((assets) => {
+        const map = assets.texture("title");
+        const m = new Three.SpriteMaterial({
+          map: map,
+          color: 0x00ff00,
+        });
+        this.titleSprite = new Three.Sprite(m);
+
+        this.titleSprite.position.set(0, 0, -100);
+        this.titleSprite.scale.setScalar(300);
+
+        this.camera.add(this.titleSprite);
+      });
     }
 
     // Moon
@@ -591,21 +611,20 @@ export class GameState extends State<GameContext, EventId> {
 
   updateUI(context: GameContext) {
     if (this.playState == PlayState.Intro) {
-      context.ui.globalCompositeOperation = 'source-over';
-      context.ui.fillStyle = '#000';
+      context.ui.globalCompositeOperation = "source-over";
+      context.ui.fillStyle = "#000";
       context.ui.fillRect(0, 0, 800, 600);
 
-      context.ui.globalCompositeOperation = 'destination-out';
-      context.ui.fillStyle = '#fff';
+      context.ui.globalCompositeOperation = "destination-out";
+      context.ui.fillStyle = "#fff";
 
       context.ui.beginPath();
-      context.ui.arc(400, 300, this.circleMaskRadius, 0, Math.PI*2);
+      context.ui.arc(400, 300, this.circleMaskRadius, 0, Math.PI * 2);
       context.ui.fill();
 
       if (this.circleMaskRadius >= 600) {
         this.playState = PlayState.IntroExit;
-      }
-      else if (this.circleMaskRadius >= 400) {
+      } else if (this.circleMaskRadius >= 400) {
         this.isPaused = false;
       }
     } else if (this.playState == PlayState.IntroExit) {
@@ -625,11 +644,16 @@ export class GameState extends State<GameContext, EventId> {
         .easing(TWEEN.Easing.Cubic.Out)
         .delay(3000);
 
-      f0.chain(f1).start();
+      this.titleSprite.material.opacity = 1;
+      const f2 = new TWEEN.Tween(this.titleSprite.material)
+        .to({ opacity: 0 }, 3000)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .delay(3000);
+
+      f0.chain(f1, f2).start();
 
       this.playState = PlayState.Intro;
-    }
-    else if (this.playState == PlayState.IntroExit) {
+    } else if (this.playState == PlayState.IntroExit) {
       this.isPaused = false;
     }
 
@@ -690,25 +714,25 @@ export class GameState extends State<GameContext, EventId> {
     if (!this.isPaused) {
       if (
         context.inputs.isKeyDown("KeyA") ||
-          context.inputs.isKeyDown("ArrowLeft")
+        context.inputs.isKeyDown("ArrowLeft")
       ) {
         accel.x = -1;
       }
       if (
         context.inputs.isKeyDown("KeyD") ||
-          context.inputs.isKeyDown("ArrowRight")
+        context.inputs.isKeyDown("ArrowRight")
       ) {
         accel.x = +1;
       }
       if (
         context.inputs.isKeyDown("KeyW") ||
-          context.inputs.isKeyDown("ArrowUp")
+        context.inputs.isKeyDown("ArrowUp")
       ) {
         accel.y = +1;
       }
       if (
         context.inputs.isKeyDown("KeyS") ||
-          context.inputs.isKeyDown("ArrowDown")
+        context.inputs.isKeyDown("ArrowDown")
       ) {
         accel.y = -1;
       }
@@ -723,12 +747,12 @@ export class GameState extends State<GameContext, EventId> {
       }
       this.shipVelocity.x = clamp(
         this.shipVelocity.x,
-          -shipParams.maxSpeed,
+        -shipParams.maxSpeed,
         shipParams.maxSpeed
       );
       this.shipVelocity.y = clamp(
         this.shipVelocity.y,
-          -shipParams.maxSpeed,
+        -shipParams.maxSpeed,
         shipParams.maxSpeed
       );
 
@@ -824,7 +848,7 @@ export class GameState extends State<GameContext, EventId> {
         let d = rayAngle - this.rayHolder.rotation.z;
         d = clamp(
           d,
-            -shipParams.rayAngleSpeedFactor,
+          -shipParams.rayAngleSpeedFactor,
           shipParams.rayAngleSpeedFactor
         );
         this.rayHolder.rotation.z += d;

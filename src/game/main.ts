@@ -19,6 +19,7 @@ import cowModelPath from "url:./assets/cow.glb";
 import humanModelPath from "url:./assets/human.glb";
 import rockModelPath from "url:./assets/rock.obj";
 import tankModelPath from "url:./assets/tank.glb";
+import titleTexPath from "url:./assets/title.png";
 import treeModelPath from "url:./assets/tree.obj";
 import ufoModelPath from "url:./assets/ufo.obj";
 
@@ -47,6 +48,7 @@ const assets = new Assets({
     cloud1: cloud1TexPath,
     cloud2: cloud2TexPath,
     cloud3: cloud3TexPath,
+    title: titleTexPath,
   },
 });
 
@@ -68,13 +70,12 @@ export type EventId = "game_started" | "game_ended";
 function setup() {
   document.removeEventListener("click", setup);
   const startPrompt = document.getElementById("startPrompt");
-  if (startPrompt)
-    startPrompt.style.display = 'none';
+  if (startPrompt) startPrompt.style.display = "none";
 
   const canvasUI = document.getElementById("overlay") as HTMLCanvasElement;
   canvasUI.width = 800;
   canvasUI.height = 600;
-  const uiContext = canvasUI.getContext('2d')!;
+  const uiContext = canvasUI.getContext("2d")!;
 
   const gameContext: GameContext = {
     renderer: new THREE.WebGLRenderer({ antialias: true }),
