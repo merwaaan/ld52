@@ -14,7 +14,9 @@ export abstract class Entity {
   state: EntityState = EntityState.Alive;
 
   abstract model: Three.Object3D;
+
   abstract physics: Matter.Body;
+  autoAddPhysics = true;
 
   otherPhysics: (Matter.Body | Matter.Constraint)[] = [];
 

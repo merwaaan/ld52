@@ -564,6 +564,10 @@ export class GameState extends State<GameContext, EventId> {
             const entity = this.world.entityFromPhysics(other);
             if (entity) {
               this.attractedEntities.add(entity);
+
+              if (this.shipIsGrabbing) {
+                entity.grab();
+              }
             }
           }
         }
@@ -961,8 +965,6 @@ export class GameState extends State<GameContext, EventId> {
       vertOffset?: number;
     }
   ) {
-    console.log(arguments);
-
     const color = options?.color ?? 0xffffff;
     const attachToCam = options?.attachToCam ?? false;
     const size = options?.size ?? 20;
@@ -986,7 +988,7 @@ export class GameState extends State<GameContext, EventId> {
       this.camera.add(mesh);
     } else {
       this.scene.add(mesh);
-      mesh.rotateZ(this.planetRotation);
+      mesh.rotateZ(-this.planetRotation);
     }
 
     const b = new ScoreBubble(mesh, new Three.Vector2(0, 1), 1000);

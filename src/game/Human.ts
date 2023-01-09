@@ -19,7 +19,7 @@ function haaDelay() {
   return Math.random() * 5 + 5;
 }
 
-const haas = ["HAAA", "HA!", "ho.", ":("];
+const haas = ["HAAA", "HA!", "HAaaAAaaaAa", "oh no", ":("];
 
 function randomHaa() {
   const i = Math.floor(Math.random() * haas.length);
@@ -51,13 +51,14 @@ export class Human extends Entity {
     const scale = 50;
 
     this.physics = Matter.Bodies.rectangle(x, -y - 30, scale, scale, {
-      isStatic: true,
+      //isStatic: true,
       friction: 10,
       frictionAir: 0.01,
       mass: 1,
       inverseMass: 1,
       plugin: planetAttraction(),
     });
+    this.autoAddPhysics = false;
 
     this.mode = { type: "run", goingLeft: Math.random() > 0.5 };
 
@@ -112,7 +113,13 @@ export class Human extends Entity {
     this.mode = { type: "grabbed" };
     this.anim();
 
-    Matter.Body.setStatic(this.physics, false);
+    Matter.Body.applyForce(
+      this.physics,
+      Matter.Vector.create(0, 0),
+      Matter.Vector.create(Math.random() * 100, Math.random())
+    );
+    Matter.Body.setAngularVelocity(this.physics, 1);
+    //Matter.Body.setStatic(this.physics, false);
   }
 
   release() {
@@ -134,12 +141,12 @@ export class Human extends Entity {
     if (this.nextHaaDelay < 0) {
       const p = new Three.Vector3();
       p.copy(this.model.position);
-      p.y += 25;
+      p.y += 30;
 
       state.spawnBubble(context, randomHaa(), p, {
         size: 10,
         endScale: 1,
-        vertOffset: 5,
+        vertOffset: 10,
         duration: 3000,
       });
       this.nextHaaDelay = haaDelay();
@@ -151,7 +158,7 @@ export class Human extends Entity {
       case "run":
         // Move
 
-        const runSpeed = 0.004;
+        const runSpeed = 0.002;
 
         const pos = new Three.Vector3(
           this.physics.position.x,
@@ -162,10 +169,11 @@ export class Human extends Entity {
         const newPos = angleToWorldSpace(newAngle, state.planetRadius);
 
         Matter.Body.setPosition(this.physics, { x: newPos.x, y: -newPos.y });
+        Matter.Body.setAngle(this.physics, state.planetRotation);
 
         // Collide with ray
 
-        Matter.Body.setStatic(this.physics, false);
+        //Matter.Body.setStatic(this.physics, false);
         const d = Matter.Detector.create({
           bodies: [this.physics, state.shipRayPhysics],
         });
@@ -176,7 +184,8 @@ export class Human extends Entity {
             c.bodyA == state.shipRayPhysics || c.bodyB == state.shipRayPhysics
         );
 
-        if (!collidesWithRay) {
+        if (collidesWithRay && state.shipIsGrabbing) {
+          Matter.Composite.add(state.physics.world, this.physics);
           //Matter.Body.setStatic(this.physics, true);
         }
 
@@ -197,8 +206,8 @@ export class Human extends Entity {
         break;
 
       case "falling":
-        const toCenter = this.physics.position;
-        const g = Matter.Vector.mult(Matter.Vector.neg(toCenter), 0.00001);
+        const toCenter = Matter.Vector.normalise(this.physics.position);
+        const g = Matter.Vector.mult(Matter.Vector.neg(toCenter), 0.001);
 
         Matter.Body.applyForce(this.physics, this.physics.position, g);
 
@@ -217,7 +226,8 @@ export class Human extends Entity {
         if (collidesWithGround) {
           this.mode = { type: "run", goingLeft: true };
           this.anim();
-          Matter.Body.setStatic(this.physics, true);
+          Matter.World.remove(state.physics.world, this.physics);
+          //Matter.Body.setStatic(this.physics, true);
         }
 
         break;

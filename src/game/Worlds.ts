@@ -165,11 +165,13 @@ export class World {
 
     state.scene.add(entity.model);
 
-    //Matter.Body.setAngle(entity.physics, angle);
-    Matter.Composite.add(state.physics.world, [
-      entity.physics,
-      ...entity.otherPhysics,
-    ]);
+    if (entity.autoAddPhysics) {
+      //Matter.Body.setAngle(entity.physics, angle);
+      Matter.Composite.add(state.physics.world, [
+        entity.physics,
+        ...entity.otherPhysics,
+      ]);
+    }
   }
 
   spawn(entityDesc: EntityDesc, state: GameState, context: GameContext) {
@@ -219,11 +221,13 @@ export class World {
 
     state.scene.add(entity.model);
 
-    Matter.Body.setAngle(entity.physics, angle);
-    Matter.Composite.add(state.physics.world, [
-      entity.physics,
-      ...entity.otherPhysics,
-    ]);
+    if (entity.autoAddPhysics) {
+      Matter.Body.setAngle(entity.physics, angle);
+      Matter.Composite.add(state.physics.world, [
+        entity.physics,
+        ...entity.otherPhysics,
+      ]);
+    }
   }
 
   despawn(entity: Entity, state: GameState) {
