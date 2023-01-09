@@ -1,6 +1,0 @@
-node_modules
-dist
-.parcel-cache
-*.blend1
-/src/game/assets/sfx/raw/
-/tsconfig.tsbuildinfo
