@@ -6,7 +6,7 @@ export const colors = {
   rock: 0.2,
   barn: 0.2,
   human: 0.3,
-  cow: 0.9,
+  cow: 0.1,
   tank: 0.4,
   bg1: 0.3,
   bg2: 0.15,

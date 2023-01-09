@@ -107,8 +107,7 @@ export class World {
     if (t < 0.5) {
       //console.log("level 1");
       p = [
-        [smallRock, 10],
-        [medRock, 15],
+        [medRock, 25],
         [bigRock, 5],
         [tree, 15],
         [bigTree, 5],
@@ -119,8 +118,7 @@ export class World {
     } else if (t < 1) {
       //console.log("level 2");
       p = [
-        [smallRock, 10],
-        [medRock, 15],
+        [medRock, 25],
         [bigRock, 5],
         [tree, 15],
         [bigTree, 5],
@@ -131,8 +129,7 @@ export class World {
     } else {
       //console.log("level 3");
       p = [
-        [smallRock, 10],
-        [medRock, 10],
+        [medRock, 20],
         [bigRock, 5],
         [tree, 10],
         [bigTree, 5],
