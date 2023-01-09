@@ -6,13 +6,22 @@ import { Entity } from "./Entity";
 import { GameContext } from "./main";
 import { planetAttraction, randomBetween } from "../utils";
 import { assignMaterial, bwMaterial, colors } from "./colors";
+import { LoopOnce } from "three";
+
+function delay() {
+  return Math.random() * 3 + 3;
+}
 
 export class Cow extends Entity {
   model: Three.Object3D;
   physics: Matter.Body;
 
   mixer?: Three.AnimationMixer;
-  idleAction?: Three.AnimationAction;
+  eatAction?: Three.AnimationAction;
+  panicAction?: Three.AnimationAction;
+
+  mode: "idle" | "eat" | "panic" = "idle";
+  nextModeDelay: number = delay();
 
   constructor(x: number, y: number, context: GameContext) {
     super();
@@ -34,7 +43,7 @@ export class Cow extends Entity {
     context.assets.onReady((assets) => {
       const cowModel = SkeletonUtils.clone(assets.model("cow"));
 
-      const a = assets.model("cow").animations;
+      const anims = assets.model("cow").animations;
       cowModel.translateY(-scale / 2);
       cowModel.scale.set(scale, scale, scale);
 
@@ -45,18 +54,73 @@ export class Cow extends Entity {
       // Anim
 
       this.mixer = new Three.AnimationMixer(cowModel);
-      const idleClip = Three.AnimationClip.findByName(a, "eat");
+      const idleClip = Three.AnimationClip.findByName(anims, "eat");
+      const panicClip = Three.AnimationClip.findByName(anims, "panic");
 
-      this.idleAction = this.mixer.clipAction(idleClip);
-      this.idleAction?.play();
+      this.eatAction = this.mixer.clipAction(idleClip);
+      //this.idleAction?.setLoop(Three.LoopOnce, 1);
+      this.eatAction?.play();
+
+      this.panicAction = this.mixer.clipAction(panicClip);
+      this.panicAction?.play();
+      this.panicAction.timeScale = 2;
+
+      this.anim();
     });
   }
 
+  anim() {
+    switch (this.mode) {
+      case "idle":
+        this.panicAction?.stop();
+        this.eatAction?.stop();
+        break;
+
+      case "eat":
+        this.panicAction?.stop();
+        this.eatAction?.play();
+        break;
+
+      case "panic":
+        this.panicAction?.play();
+        this.eatAction?.stop();
+        break;
+    }
+  }
+
   update() {
-    this.mixer?.update(1 / 60);
+    const dt = 1 / 60;
+
+    switch (this.mode) {
+      case "idle":
+        this.nextModeDelay -= dt;
+
+        if (this.nextModeDelay < 0) {
+          this.mode = "eat";
+          this.nextModeDelay = delay();
+          this.anim();
+        }
+        break;
+
+      case "eat":
+        this.nextModeDelay -= dt;
+
+        if (this.nextModeDelay < 0) {
+          this.mode = "idle";
+          this.nextModeDelay = delay();
+          this.anim();
+        }
+        break;
+
+      case "panic":
+        break;
+    }
+
+    this.mixer?.update(dt);
   }
 
   grab(): void {
-    // TODO panic anim
+    this.mode = "panic";
+    this.anim();
   }
 }
