@@ -77,8 +77,9 @@ class ScoreBubble {
   update(context: GameContext) {
     const dt = 1000 / 60;
     this.duration -= dt;
-    if (this.duration <= 0)
+    if (this.duration <= 0) {
       this.isDead = true;
+    }
   }
 }
 
@@ -139,7 +140,8 @@ export class GameState extends State<GameContext, EventId> {
 
   shipLife: number = 100;
   shipLifeDownFactor: number = 0.1;
-  shipLifeBar: Three.Mesh;
+  shipLifeBar: Three.Group;
+  shipLifeBarLamps: Three.Mesh[];
 
   titleSprite: Three.Sprite = new Three.Sprite();
 
@@ -482,17 +484,29 @@ export class GameState extends State<GameContext, EventId> {
 
     // Ship life bar
     {
-      const width = 120;
+      this.shipLifeBar = new Three.Group();
+      this.shipLifeBarLamps = [];
 
-      const geometry = new Three.CapsuleGeometry(3, width, 8, 8);
-      const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
-      const capsule = new Three.Mesh(geometry, material);
-      capsule.rotation.z = Math.PI / 2;
-      capsule.position.y = -2;
-      capsule.position.z = 90;
+      const n = 10;
+      const arcStart = 0.3;
+      const arcEnd = Math.PI - arcStart;
+      const a = arcStart + (arcEnd - arcStart) / n;
+      const radius = 85;
+      for (let i = 0; i < n; ++i) {
+        const geometry = new Three.SphereGeometry(4, 8, 8);
+        const material = new Three.MeshBasicMaterial({ color: 0x00ff00 });
+        const mesh = new Three.Mesh(geometry, material);
+        const a = arcStart + (i * (arcEnd - arcStart)) / (n - 1);
+        mesh.position.x = radius * Math.cos(a);
+        mesh.position.y = radius * Math.sin(a);
+        this.shipLifeBar.add(mesh);
+        this.shipLifeBarLamps.push(mesh);
+      }
 
-      this.shipLifeBar = capsule;
-      this.ship.add(capsule);
+      this.shipLifeBar.rotation.x = -Math.PI / 2;
+      this.shipLifeBar.rotation.z = Math.PI;
+
+      this.ship.add(this.shipLifeBar);
     }
 
     // Tractor beam
@@ -738,8 +752,9 @@ export class GameState extends State<GameContext, EventId> {
     if (this.beamSfx && this.beamSfx.isPlaying) {
       this.beamSfx.stop();
     }
-    if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+    if (this.shipRay.material instanceof Three.MeshBasicMaterial) {
       this.shipRay.material.color = new Three.Color(0x00ffff);
+    }
 
     this.planetRotation = 0;
     this.cameraPivot.rotation.z = 0;
@@ -763,11 +778,15 @@ export class GameState extends State<GameContext, EventId> {
   }
 
   updateCameraShake() {
-    const dt = 1000/60;
-    this.time += 1000/60;
+    const dt = 1000 / 60;
+    this.time += 1000 / 60;
     if (this.shakeRemaining > 0) {
-      const dx = Math.sin(this.time * shipParams.shakeSpeed) * shipParams.shakeAmplitude;
-      const dy = Math.cos(this.time * shipParams.shakeSpeed) * shipParams.shakeAmplitude * dx;
+      const dx =
+        Math.sin(this.time * shipParams.shakeSpeed) * shipParams.shakeAmplitude;
+      const dy =
+        Math.cos(this.time * shipParams.shakeSpeed) *
+        shipParams.shakeAmplitude *
+        dx;
       this.cameraCamera.rotation.x += dx;
       this.cameraCamera.rotation.y += dy;
 
@@ -989,7 +1008,10 @@ export class GameState extends State<GameContext, EventId> {
   updateScoreBubbles(context: GameContext) {
     for (const b of this.scoreBubbles) {
       b.update(context);
-      if (b.isDead) this.camera.remove(b.mesh);
+      if (b.isDead) {
+        this.camera.remove(b.mesh);
+        this.scene.remove(b.mesh);
+      }
     }
     this.scoreBubbles = this.scoreBubbles.filter((b) => !b.isDead);
   }
@@ -1331,11 +1353,17 @@ export class GameState extends State<GameContext, EventId> {
     this.updateScoreBubbles(context);
 
     // Update ship life
-    if (!this.isPaused) {
-      // this.shipLife -= this.shipLifeDownFactor;
-      // this.shipLife = clamp(this.shipLife, 0, 100);
-      this.shipLifeBar.scale.y = this.shipLife / 100;
-      this.shipLifeBar.position.x = -60 + 60 * this.shipLifeBar.scale.y;
+    {
+      for (let i = 0; i < 10; ++i) {
+        const m = this.shipLifeBarLamps[i].material;
+        if (m instanceof Three.MeshBasicMaterial) {
+          if (this.shipLife <= i * 10) {
+            m.color = new Three.Color(0x000000);
+          } else {
+            m.color = new Three.Color(0x00ff00);
+          }
+        }
+      }
     }
 
     if (this.playState == PlayState.Playing && this.shipLife <= 0) {
