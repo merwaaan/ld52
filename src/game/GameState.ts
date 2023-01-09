@@ -544,13 +544,7 @@ export class GameState extends State<GameContext, EventId> {
 
             const entity = this.world.entityFromPhysics(other);
             if (entity) {
-              const isNew = !this.attractedEntities.has(entity);
-
               this.attractedEntities.add(entity);
-
-              if (isNew && this.shipIsGrabbing && !entity.grabbed) {
-                entity.grab();
-              }
             }
           }
         }
@@ -1154,6 +1148,10 @@ export class GameState extends State<GameContext, EventId> {
             .to({ angle: Math.PI / 14 }, shipParams.beamOpenSpeed)
             .easing(TWEEN.Easing.Elastic.Out)
             .start();
+
+          for (const entity of this.attractedEntities) {
+            entity.grab();
+          }
         } else {
           if (this.beamSfx) {
             this.beamSfx.stop();
@@ -1172,6 +1170,10 @@ export class GameState extends State<GameContext, EventId> {
             .to({ angle: Math.PI / 64 }, shipParams.beamCloseSpeed)
             .easing(TWEEN.Easing.Quadratic.Out)
             .start();
+
+          for (const entity of this.attractedEntities) {
+            entity.release();
+          }
         }
       }
 
