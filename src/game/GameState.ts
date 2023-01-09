@@ -3,6 +3,7 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 import { FilmPass } from "three/examples/jsm/postprocessing/FilmPass";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
 import * as TWEEN from "@tweenjs/tween.js";
 import Matter from "matter-js";
 import { createNoise2D } from "simplex-noise";
@@ -59,7 +60,9 @@ export class GameState extends State<GameContext, EventId> {
 
   cameraPivot: Three.Group;
   camera: Three.Camera;
-  composer: EffectComposer;
+
+  bloomComposer: EffectComposer;
+  finalComposer: EffectComposer;
 
   ship: Three.Object3D;
   shipPhysics: Matter.Body;
@@ -171,11 +174,13 @@ export class GameState extends State<GameContext, EventId> {
     Matter.Composite.add(this.physics.world, [ground]);
 
     // Ground
-    const geometry = new Three.SphereGeometry(this.planetRadius, 64, 64);
-    const mat = bwMaterial(colors["ground"]);
-    mat.flatShading = true;
-    const circle = new Three.Mesh(geometry, mat);
-    this.scene.add(circle);
+    {
+      const geometry = new Three.SphereGeometry(this.planetRadius, 64, 64);
+      const mat = bwMaterial(colors["ground"]);
+      //mat.flatShading = true;
+      const sphere = new Three.Mesh(geometry, mat);
+      this.scene.add(sphere);
+    }
 
     // Background layers
 
@@ -183,8 +188,8 @@ export class GameState extends State<GameContext, EventId> {
       const noise = createNoise2D();
 
       const layerColors = [colors["bg1"], colors["bg2"], colors["bg3"]];
-      const layerHeights = [70, 120, 150];
-      const layerHeightDeltas = [25, 10, 10];
+      const layerHeights = [90, 140, 180];
+      const layerHeightDeltas = [30, 17, 10];
 
       for (let layer = 0; layer < layerColors.length; ++layer) {
         const layerHeight = this.planetRadius + layerHeights[layer];
@@ -347,16 +352,16 @@ export class GameState extends State<GameContext, EventId> {
         };
 
         applyMat("base", {
-          emissive: 0x505050,
+          emissive: 0x303030,
           specular: 0xffffff,
           shininess: 80,
         });
 
         applyMat("dome", {
           transparent: true,
-          opacity: 0.3,
+          opacity: 0.4,
           specular: 0xffffff,
-          shininess: 60,
+          shininess: 100,
         });
 
         applyMat("eye1", {
@@ -585,9 +590,13 @@ export class GameState extends State<GameContext, EventId> {
 
     // Post
 
-    this.composer = new EffectComposer(context.renderer);
+    this.bloomComposer = new EffectComposer(context.renderer);
+    this.finalComposer = new EffectComposer(context.renderer);
+
     const renderPass = new RenderPass(this.scene, this.camera);
-    const filmPass = new FilmPass(0.6, 0, 100, 0);
+
+    const filmPass = new FilmPass(0.3, 0, 0, 0);
+
     const bloomPass = new UnrealBloomPass(
       new Three.Vector2(
         context.renderer.domElement.width,
@@ -597,9 +606,42 @@ export class GameState extends State<GameContext, EventId> {
       0.2,
       0.2
     );
-    this.composer.addPass(renderPass);
-    //this.composer.addPass(bloomPass);
-    this.composer.addPass(filmPass);
+
+    const finalPass = new ShaderPass(
+      new Three.ShaderMaterial({
+        uniforms: {
+          baseTexture: { value: null },
+          bloomTexture: { value: this.bloomComposer.renderTarget2.texture },
+        },
+        vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+        }`,
+        fragmentShader: `
+        uniform sampler2D baseTexture;
+        uniform sampler2D bloomTexture;
+        varying vec2 vUv;
+        void main() {
+          gl_FragColor = ( texture2D( baseTexture, vUv ) + vec4( 1.0 ) * texture2D( bloomTexture, vUv ) );
+        }`,
+        defines: {},
+      }),
+      "baseTexture"
+    );
+    finalPass.needsSwap = true;
+
+    this.bloomComposer.renderToScreen = false;
+    this.bloomComposer.addPass(renderPass);
+    this.bloomComposer.addPass(bloomPass);
+
+    this.finalComposer.addPass(renderPass);
+    this.finalComposer.addPass(bloomPass);
+    //this.finalComposer.addPass(finalPass);
+    this.finalComposer.addPass(filmPass);
+
+    //
 
     this.circleMaskRadius = 80;
     this.playState = PlayState.IntroEnter;
@@ -964,7 +1006,8 @@ export class GameState extends State<GameContext, EventId> {
 
     // Render
 
-    this.composer.render();
+    //this.bloomComposer.render();
+    this.finalComposer.render();
     //context.renderer.render(this.scene, this.camera);
   }
 }

@@ -1,7 +1,7 @@
 import * as Three from "three";
 
 export const colors = {
-  ground: 0.05,
+  ground: 0.2,
   tree: 0.3,
   rock: 0.2,
   barn: 0.2,
@@ -21,7 +21,7 @@ export function bw(intensity: number) {
 export function bwMaterial(intensity: number) {
   return new Three.MeshLambertMaterial({
     color: bw(intensity),
-    emissive: bw(intensity * 0.5),
+    emissive: bw(intensity * 0.25),
   });
 }
 
