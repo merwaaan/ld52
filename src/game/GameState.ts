@@ -727,7 +727,7 @@ export class GameState extends State<GameContext, EventId> {
   updateUI(context: GameContext) {
     if (this.playState == PlayState.Intro) {
       context.ui.globalCompositeOperation = "source-over";
-      context.ui.fillStyle = "#222";
+      context.ui.fillStyle = "#111";
       context.ui.fillRect(0, 0, 800, 600);
 
       context.ui.globalCompositeOperation = "destination-out";
@@ -745,7 +745,7 @@ export class GameState extends State<GameContext, EventId> {
       }
     } else if (this.playState == PlayState.DeathFade) {
       context.ui.globalCompositeOperation = "source-over";
-      context.ui.fillStyle = "#222";
+      context.ui.fillStyle = "#111";
       context.ui.fillRect(0, 0, 800, 600);
 
       context.ui.globalCompositeOperation = "destination-out";
@@ -838,7 +838,7 @@ export class GameState extends State<GameContext, EventId> {
       }
     } else if (this.playState == PlayState.ResetExit) {
       context.ui.globalCompositeOperation = "source-over";
-      context.ui.fillStyle = "#222";
+      context.ui.fillStyle = "#111";
       context.ui.fillRect(0, 0, 800, 600);
 
       context.ui.globalCompositeOperation = "destination-out";
