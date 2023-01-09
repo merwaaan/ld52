@@ -26,6 +26,8 @@ import ufoModelPath from "url:./assets/ufo.obj";
 import bgSfxPath from "url:./assets/sfx/bg.ogg";
 import beamSfxPath from "url:./assets/sfx/beam.ogg";
 import shipSfxPath from "url:./assets/sfx/ship.ogg";
+import hitSfxPath from "url:./assets/sfx/hit.ogg";
+import scoreSfxPath from "url:./assets/sfx/score.ogg";
 
 import scoreFontPath from "url:./assets/fonts/helvetiker_bold.typeface.font";
 
@@ -44,6 +46,8 @@ const assets = new Assets({
     bg: bgSfxPath,
     beam: beamSfxPath,
     ship: shipSfxPath,
+    hit: hitSfxPath,
+    score: scoreSfxPath,
   },
 
   textures: {

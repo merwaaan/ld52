@@ -124,6 +124,7 @@ export class GameState extends State<GameContext, EventId> {
   beamSfx: Three.Audio | undefined;
   shipSfx: Three.Audio | undefined;
   hitSfx: Three.Audio | undefined;
+  scoreSfx: Three.Audio | undefined;
 
   physics: Matter.Engine;
   physicsRenderer: Matter.Render;
@@ -681,6 +682,10 @@ export class GameState extends State<GameContext, EventId> {
       this.hitSfx = new Three.Audio(listener);
       this.hitSfx.setBuffer(assets.sound("hit"));
       this.hitSfx.setVolume(0.18);
+
+      this.scoreSfx = new Three.Audio(listener);
+      this.scoreSfx.setBuffer(assets.sound("score"));
+      this.scoreSfx.setVolume(0.05);
     });
 
     // Post
@@ -1342,6 +1347,9 @@ export class GameState extends State<GameContext, EventId> {
 
             if (score != 0) {
               this.spawnScoreBubble(context, score);
+              if (this.scoreSfx) {
+                this.scoreSfx.play();
+              }
             }
           } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
