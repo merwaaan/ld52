@@ -20,10 +20,18 @@ canvas {
 }
 
 #container {
+  background-color: #222;
   margin: auto;
-  position: relative;
   width: 800px;
   height: 600px;
+}
+
+#startPrompt {
+  font-size: 32px;
+  display: block;
+  margin: 0;
+  padding-top: 300px;
+  text-align: center;
 }
 
 a {

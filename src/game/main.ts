@@ -57,6 +57,9 @@ export type EventId = "game_started" | "game_ended";
 
 function setup() {
   document.removeEventListener("click", setup);
+  const startPrompt = document.getElementById("startPrompt");
+  if (startPrompt)
+    startPrompt.style.display = 'none';
 
   const gameContext: GameContext = {
     renderer: new THREE.WebGLRenderer({ antialias: true }),
