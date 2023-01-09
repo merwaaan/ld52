@@ -668,6 +668,8 @@ export class GameState extends State<GameContext, EventId> {
     if (this.beamSfx && this.beamSfx.isPlaying) {
       this.beamSfx.stop();
     }
+    if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+      this.shipRay.material.color = new Three.Color(0x00ffff);
 
     this.planetRotation = 0;
     this.cameraPivot.rotation.z = 0;
