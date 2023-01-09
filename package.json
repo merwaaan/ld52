@@ -3,7 +3,7 @@
   "scripts": {
     "start": "parcel src/game/index.html",
     "build": "parcel build src/game/index.html --public-url /ld52",
-    "fast-build": "parcel build src/game/index.html --no-optimize --public-url /dist",
+    "fast-build": "parcel build src/game/index.html --no-optimize",
     "check": "tsc --noEmit"
   },
   "devDependencies": {
