@@ -7,9 +7,15 @@ import { GameContext } from "./main";
 import { planetAttraction, randomBetween } from "../utils";
 import { assignMaterial, bwMaterial, colors } from "./colors";
 import { LoopOnce } from "three";
+import { GameState } from "./GameState";
+import { World } from "./Worlds";
 
-function delay() {
+function animDelay() {
   return Math.random() * 3 + 3;
+}
+
+function mooDelay() {
+  return Math.random() * 5 + 5;
 }
 
 export class Cow extends Entity {
@@ -21,7 +27,11 @@ export class Cow extends Entity {
   panicAction?: Three.AnimationAction;
 
   mode: "idle" | "eat" | "panic" = "idle";
-  nextModeDelay: number = delay();
+  nextModeDelay: number = animDelay();
+
+  nextMooDelay: number = animDelay();
+
+  left = false;
 
   constructor(x: number, y: number, context: GameContext) {
     super();
@@ -48,6 +58,11 @@ export class Cow extends Entity {
       cowModel.scale.set(scale, scale, scale);
 
       assignMaterial(cowModel, bwMaterial(colors["cow"]));
+
+      if (Math.random() > 0.5) {
+        this.left = true;
+        cowModel.rotateY(Math.PI);
+      }
 
       this.model.add(cowModel);
 
@@ -88,7 +103,7 @@ export class Cow extends Entity {
     }
   }
 
-  update() {
+  update(state: GameState, world: World, context: GameContext) {
     const dt = 1 / 60;
 
     switch (this.mode) {
@@ -97,7 +112,7 @@ export class Cow extends Entity {
 
         if (this.nextModeDelay < 0) {
           this.mode = "eat";
-          this.nextModeDelay = delay();
+          this.nextModeDelay = animDelay();
           this.anim();
         }
         break;
@@ -107,7 +122,7 @@ export class Cow extends Entity {
 
         if (this.nextModeDelay < 0) {
           this.mode = "idle";
-          this.nextModeDelay = delay();
+          this.nextModeDelay = animDelay();
           this.anim();
         }
         break;
@@ -115,6 +130,28 @@ export class Cow extends Entity {
       case "panic":
         break;
     }
+
+    // Moo
+
+    this.nextMooDelay -= dt;
+
+    if (this.nextMooDelay < 0) {
+      const p = new Three.Vector3();
+      p.copy(this.model.position);
+      p.y += 15;
+      p.x += this.left ? -5 : 5;
+      p.z = 0;
+
+      state.spawnBubble(context, "moo", p, {
+        size: 10,
+        endScale: 1,
+        vertOffset: 5,
+        duration: 3000,
+      });
+      this.nextMooDelay = mooDelay();
+    }
+
+    //
 
     this.mixer?.update(dt);
   }

@@ -916,13 +916,31 @@ export class GameState extends State<GameContext, EventId> {
     }
   }
 
-  spawnScoreBubble(context: GameContext, score: number) {
-    const color = (score > 0) ? 0x00ff00 : 0xff0000;
-    const text = (score > 0) ? ("+" + score) : (""+score);
+  spawnBubble(
+    context: GameContext,
+    text: string,
+    pos: Three.Vector3,
+    options?: {
+      color?: number;
+      attachToCam?: boolean;
+      size?: number;
+      endScale?: number;
+      duration?: number;
+      vertOffset?: number;
+    }
+  ) {
+    console.log(arguments);
+
+    const color = options?.color ?? 0xffffff;
+    const attachToCam = options?.attachToCam ?? false;
+    const size = options?.size ?? 20;
+    const endScale = options?.endScale ?? 1.5;
+    const duration = options?.duration ?? 1000;
+    const vertOffset = options?.vertOffset ?? 40;
 
     const geometry = new TextGeometry(text, {
       font: context.assets.font("scoreFont"),
-      size: 20,
+      size: size,
       curveSegments: 2,
     });
 
@@ -930,32 +948,48 @@ export class GameState extends State<GameContext, EventId> {
     material.transparent = true;
     const mesh = new Three.Mesh(geometry, material);
 
-    mesh.position.x = this.ship.position.x;
-    mesh.position.y = this.ship.position.y + 50;
-    mesh.position.z = -200;
+    mesh.position.copy(pos);
 
-    this.camera.add(mesh);
-    const b = new ScoreBubble(mesh, new Three.Vector2(0,1), 1000);
+    if (attachToCam) {
+      this.camera.add(mesh);
+    } else {
+      this.scene.add(mesh);
+      mesh.rotation.z = this.planetRotation;
+    }
+
+    const b = new ScoreBubble(mesh, new Three.Vector2(0, 1), 1000);
     new TWEEN.Tween(b.mesh.position)
-      .to({ y: "+40" }, 1000)
+      .to({ y: "+" + vertOffset }, duration)
       .easing(TWEEN.Easing.Quartic.Out)
       .start();
     new TWEEN.Tween(b.mesh.material)
-      .to({ opacity: 0 }, 1200)
+      .to({ opacity: 0 }, duration + 200)
       .easing(TWEEN.Easing.Quartic.Out)
       .start();
     new TWEEN.Tween(b.mesh.scale)
-      .to({ x: 1.5, y: 1.5 }, 1200)
+      .to({ x: endScale, y: endScale }, duration + 200)
       .easing(TWEEN.Easing.Quartic.Out)
       .start();
     this.scoreBubbles.push(b);
   }
 
+  spawnScoreBubble(context: GameContext, score: number) {
+    const color = score > 0 ? 0x00ff00 : 0xff0000;
+    const text = score > 0 ? "+" + score : "" + score;
+
+    const pos = new Three.Vector3(
+      this.ship.position.x,
+      this.ship.position.y + 50,
+      -200
+    );
+
+    this.spawnBubble(context, text, pos, { color, attachToCam: true });
+  }
+
   updateScoreBubbles(context: GameContext) {
     for (const b of this.scoreBubbles) {
       b.update(context);
-      if (b.isDead)
-        this.camera.remove(b.mesh);
+      if (b.isDead) this.camera.remove(b.mesh);
     }
     this.scoreBubbles = this.scoreBubbles.filter((b) => !b.isDead);
   }

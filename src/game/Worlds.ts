@@ -296,7 +296,7 @@ export class World {
 
     if (!state.isPaused) {
       for (const entity of this.spawnedEntities) {
-        entity.update(state, this);
+        entity.update(state, this, context);
       }
     }
   }

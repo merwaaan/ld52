@@ -27,7 +27,7 @@ import bgSfxPath from "url:./assets/sfx/bg.ogg";
 import beamSfxPath from "url:./assets/sfx/beam.ogg";
 import shipSfxPath from "url:./assets/sfx/ship.ogg";
 
-import scoreFontPath from "url:./assets/fonts/optimer_bold.typeface.font";
+import scoreFontPath from "url:./assets/fonts/helvetiker_bold.typeface.font";
 
 const assets = new Assets({
   models: {
