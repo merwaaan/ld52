@@ -43,8 +43,19 @@ const shipParams = {
 
 const cameraVerticalOffset = 200;
 
+enum PlayState {
+  IntroEnter,
+  Intro,
+  IntroExit,
+  Playing,
+};
+
 export class GameState extends State<GameContext, EventId> {
   scene: Three.Scene;
+
+  playState: PlayState;
+  isPaused: boolean = false;
+  circleMaskRadius: number;
 
   cameraPivot: Three.Group;
   camera: Three.Camera;
@@ -477,7 +488,7 @@ export class GameState extends State<GameContext, EventId> {
       this.shipSfx.setBuffer(assets.sound("ship"));
       this.shipSfx.setLoop(true);
       this.shipSfx.setVolume(0.04);
-      this.shipSfx.play();
+      //this.shipSfx.play();
     });
 
     // Post
@@ -487,18 +498,65 @@ export class GameState extends State<GameContext, EventId> {
     const filmPass = new FilmPass(0.6, 0.2, 100, 1);
     this.composer.addPass(renderPass);
     this.composer.addPass(filmPass);
+
+    this.circleMaskRadius = 80;
+    this.playState = PlayState.IntroEnter;
+    this.isPaused = true;
   }
 
   enter(context: GameContext) {}
-
   exit(context: GameContext) {}
 
+  updateUI(context: GameContext) {
+    if (this.playState == PlayState.Intro) {
+      context.ui.globalCompositeOperation = 'source-over';
+      context.ui.fillStyle = '#000';
+      context.ui.fillRect(0, 0, 800, 600);
+
+      context.ui.globalCompositeOperation = 'destination-out';
+      context.ui.fillStyle = '#fff';
+
+      context.ui.beginPath();
+      context.ui.arc(400, 300, this.circleMaskRadius, 0, Math.PI*2);
+      context.ui.fill();
+
+      if (this.circleMaskRadius >= 400) {
+        this.playState = PlayState.IntroExit;
+      }
+    } else if (this.playState == PlayState.IntroExit) {
+      context.ui.clearRect(0, 0, 800, 600);
+    }
+  }
+
   update(context: GameContext, doTransition: (eventId: EventId) => void) {
+    if (this.playState == PlayState.IntroEnter) {
+      const f0 = new TWEEN.Tween(this)
+        .to({ circleMaskRadius: 200 }, 2500)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .delay(3500);
+
+      const f1 = new TWEEN.Tween(this)
+        .to({ circleMaskRadius: 600 }, 3000)
+        .easing(TWEEN.Easing.Cubic.Out)
+        .delay(3000);
+
+      f0.chain(f1).start();
+
+      this.playState = PlayState.Intro;
+    }
+    else if (this.playState == PlayState.IntroExit) {
+      this.isPaused = false;
+    }
+
+    this.updateUI(context);
+
     // Rotate the camera
 
-    const deltaRotation = this.planetSpeed; // TODO dt
-    this.planetRotation += deltaRotation;
-    this.cameraPivot.rotateZ(-deltaRotation);
+    if (!this.isPaused) {
+      const deltaRotation = this.planetSpeed; // TODO dt
+      this.planetRotation += deltaRotation;
+      this.cameraPivot.rotateZ(-deltaRotation);
+    }
 
     // Redirect gravity
 
@@ -544,52 +602,54 @@ export class GameState extends State<GameContext, EventId> {
     // Move ship
     const accel = new Three.Vector2(0, 0);
 
-    if (
-      context.inputs.isKeyDown("KeyA") ||
-      context.inputs.isKeyDown("ArrowLeft")
-    ) {
-      accel.x = -1;
-    }
-    if (
-      context.inputs.isKeyDown("KeyD") ||
-      context.inputs.isKeyDown("ArrowRight")
-    ) {
-      accel.x = +1;
-    }
-    if (
-      context.inputs.isKeyDown("KeyW") ||
-      context.inputs.isKeyDown("ArrowUp")
-    ) {
-      accel.y = +1;
-    }
-    if (
-      context.inputs.isKeyDown("KeyS") ||
-      context.inputs.isKeyDown("ArrowDown")
-    ) {
-      accel.y = -1;
-    }
+    if (!this.isPaused) {
+      if (
+        context.inputs.isKeyDown("KeyA") ||
+          context.inputs.isKeyDown("ArrowLeft")
+      ) {
+        accel.x = -1;
+      }
+      if (
+        context.inputs.isKeyDown("KeyD") ||
+          context.inputs.isKeyDown("ArrowRight")
+      ) {
+        accel.x = +1;
+      }
+      if (
+        context.inputs.isKeyDown("KeyW") ||
+          context.inputs.isKeyDown("ArrowUp")
+      ) {
+        accel.y = +1;
+      }
+      if (
+        context.inputs.isKeyDown("KeyS") ||
+          context.inputs.isKeyDown("ArrowDown")
+      ) {
+        accel.y = -1;
+      }
 
-    accel.normalize().multiplyScalar(shipParams.accelFactor);
+      accel.normalize().multiplyScalar(shipParams.accelFactor);
 
-    this.shipVelocity.add(accel);
-    this.shipVelocity.multiplyScalar(shipParams.friction);
-    if (this.shipVelocity.length() < 0.001) {
-      this.shipVelocity.x = 0;
-      this.shipVelocity.y = 0;
+      this.shipVelocity.add(accel);
+      this.shipVelocity.multiplyScalar(shipParams.friction);
+      if (this.shipVelocity.length() < 0.001) {
+        this.shipVelocity.x = 0;
+        this.shipVelocity.y = 0;
+      }
+      this.shipVelocity.x = clamp(
+        this.shipVelocity.x,
+          -shipParams.maxSpeed,
+        shipParams.maxSpeed
+      );
+      this.shipVelocity.y = clamp(
+        this.shipVelocity.y,
+          -shipParams.maxSpeed,
+        shipParams.maxSpeed
+      );
+
+      this.ship.position.x += this.shipVelocity.x;
+      this.ship.position.y += this.shipVelocity.y;
     }
-    this.shipVelocity.x = clamp(
-      this.shipVelocity.x,
-      -shipParams.maxSpeed,
-      shipParams.maxSpeed
-    );
-    this.shipVelocity.y = clamp(
-      this.shipVelocity.y,
-      -shipParams.maxSpeed,
-      shipParams.maxSpeed
-    );
-
-    this.ship.position.x += this.shipVelocity.x;
-    this.ship.position.y += this.shipVelocity.y;
 
     const shipBoundsX = 350;
     const shipBoundsY = [-180, 280];
@@ -611,74 +671,80 @@ export class GameState extends State<GameContext, EventId> {
     this.ship.rotation.x = shipAngleY;
 
     // Move ray
-    if (context.inputs.isButtonClicked(0)) {
-      this.shipIsGrabbing = !this.shipIsGrabbing;
+    if (!this.isPaused) {
+      if (context.inputs.isButtonClicked(0)) {
+        this.shipIsGrabbing = !this.shipIsGrabbing;
 
-      if (this.shipIsGrabbing) {
-        if (this.beamSfx) this.beamSfx.play();
+        if (this.shipIsGrabbing) {
+          if (this.beamSfx) {
+            this.beamSfx.play();
+          }
 
-        new TWEEN.Tween(this.shipRay.scale)
-          .to({ x: 1 }, shipParams.beamOpenSpeed)
-          .easing(TWEEN.Easing.Elastic.Out)
-          .start();
+          new TWEEN.Tween(this.shipRay.scale)
+            .to({ x: 1 }, shipParams.beamOpenSpeed)
+            .easing(TWEEN.Easing.Elastic.Out)
+            .start();
 
-        if (this.shipRay.material instanceof Three.MeshBasicMaterial)
-          this.shipRay.material.color = new Three.Color(0x00ff00);
-        this.tractorBeamLight.color = new Three.Color(0x00ff00);
+          if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+            this.shipRay.material.color = new Three.Color(0x00ff00);
+          this.tractorBeamLight.color = new Three.Color(0x00ff00);
 
-        new TWEEN.Tween(this.tractorBeamLight)
-          .to({ angle: Math.PI / 14 }, shipParams.beamOpenSpeed)
-          .easing(TWEEN.Easing.Elastic.Out)
-          .start();
-      } else {
-        if (this.beamSfx) this.beamSfx.stop();
+          new TWEEN.Tween(this.tractorBeamLight)
+            .to({ angle: Math.PI / 14 }, shipParams.beamOpenSpeed)
+            .easing(TWEEN.Easing.Elastic.Out)
+            .start();
+        } else {
+          if (this.beamSfx) {
+            this.beamSfx.stop();
+          }
 
-        new TWEEN.Tween(this.shipRay.scale)
-          .to({ x: shipParams.attractRayOffScale }, shipParams.beamCloseSpeed)
-          .easing(TWEEN.Easing.Quadratic.Out)
-          .start();
+          new TWEEN.Tween(this.shipRay.scale)
+            .to({ x: shipParams.attractRayOffScale }, shipParams.beamCloseSpeed)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start();
 
-        if (this.shipRay.material instanceof Three.MeshBasicMaterial)
-          this.shipRay.material.color = new Three.Color(0x00ffff);
-        this.tractorBeamLight.color = new Three.Color(0x00ffff);
+          if (this.shipRay.material instanceof Three.MeshBasicMaterial)
+            this.shipRay.material.color = new Three.Color(0x00ffff);
+          this.tractorBeamLight.color = new Three.Color(0x00ffff);
 
-        new TWEEN.Tween(this.tractorBeamLight)
-          .to({ angle: Math.PI / 64 }, shipParams.beamCloseSpeed)
-          .easing(TWEEN.Easing.Quadratic.Out)
-          .start();
+          new TWEEN.Tween(this.tractorBeamLight)
+            .to({ angle: Math.PI / 64 }, shipParams.beamCloseSpeed)
+            .easing(TWEEN.Easing.Quadratic.Out)
+            .start();
+        }
       }
-    }
 
-    const worldShipPosition = new Three.Vector3();
-    this.ship.getWorldPosition(worldShipPosition);
-    worldShipPosition.project(this.camera);
+      const worldShipPosition = new Three.Vector3();
+      this.ship.getWorldPosition(worldShipPosition);
+      worldShipPosition.project(this.camera);
 
-    const normalShipPosition = new Three.Vector2(
-      worldShipPosition.x,
-      worldShipPosition.y
-    );
-
-    const shipToCursor = viewCursor.clone().sub(normalShipPosition);
-    shipToCursor.normalize();
-    let rayAngle = shipToCursor.angle();
-    if (rayAngle > Math.PI) {
-      rayAngle = clamp(
-        rayAngle,
-        Math.PI * (1 + shipParams.rayMaxAngle),
-        Math.PI * (2 - shipParams.rayMaxAngle)
+      const normalShipPosition = new Three.Vector2(
+        worldShipPosition.x,
+        worldShipPosition.y
       );
-      // Adjust for initial angle + ship slant offset
-      rayAngle += Math.PI / 2 - shipAngleX;
 
-      // Clamp rotation speed
-      let d = rayAngle - this.rayHolder.rotation.z;
-      d = clamp(
-        d,
-        -shipParams.rayAngleSpeedFactor,
-        shipParams.rayAngleSpeedFactor
-      );
-      this.rayHolder.rotation.z += d;
-      this.rayHolder.rotation.x = -shipAngleY;
+      const shipToCursor = viewCursor.clone().sub(normalShipPosition);
+      shipToCursor.normalize();
+      let rayAngle = shipToCursor.angle();
+      if (rayAngle > Math.PI) {
+        rayAngle = clamp(
+          rayAngle,
+          Math.PI * (1 + shipParams.rayMaxAngle),
+          Math.PI * (2 - shipParams.rayMaxAngle)
+        );
+        // Adjust for initial angle + ship slant offset
+        rayAngle += Math.PI / 2 - shipAngleX;
+
+        // Clamp rotation speed
+        let d = rayAngle - this.rayHolder.rotation.z;
+        d = clamp(
+          d,
+            -shipParams.rayAngleSpeedFactor,
+          shipParams.rayAngleSpeedFactor
+        );
+        this.rayHolder.rotation.z += d;
+        this.rayHolder.rotation.x = -shipAngleY;
+      }
     }
 
     const coneWorldPos = new Three.Vector3();
@@ -751,10 +817,12 @@ export class GameState extends State<GameContext, EventId> {
     }
 
     // Update ship life
-    this.shipLife -= this.shipLifeDownFactor;
-    this.shipLife = clamp(this.shipLife, 0, 100);
-    this.shipLifeBar.scale.y = this.shipLife / 100;
-    this.shipLifeBar.position.x = -60 + 60 * this.shipLifeBar.scale.y;
+    if (!this.isPaused) {
+      this.shipLife -= this.shipLifeDownFactor;
+      this.shipLife = clamp(this.shipLife, 0, 100);
+      this.shipLifeBar.scale.y = this.shipLife / 100;
+      this.shipLifeBar.position.x = -60 + 60 * this.shipLifeBar.scale.y;
+    }
 
     if (this.shipLife == 0) {
       //doTransition("game_ended");

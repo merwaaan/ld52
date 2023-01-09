@@ -21,11 +21,17 @@ export class Inputs {
 
     document.addEventListener("mousedown", (event) => {
       this._mouseButtonsDown.add(event.button);
+      event.preventDefault();
     });
 
     document.addEventListener("mouseup", (event) => {
       this._mouseButtonsDown.delete(event.button);
       this._mouseButtonsUp.add(event.button);
+      event.preventDefault();
+    });
+
+    document.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
     });
 
     document.addEventListener("mousemove", (event) => {
@@ -45,7 +51,7 @@ export class Inputs {
     return this._mouseButtonsDown.has(button);
   }
 
-  isButtonup(button: number): boolean {
+  isButtonUp(button: number): boolean {
     return this._mouseButtonsUp.has(button);
   }
 

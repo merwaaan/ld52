@@ -299,8 +299,10 @@ export class World {
 
     // Update
 
-    for (const entity of this.spawnedEntities) {
-      entity.update(state, this);
+    if (!state.isPaused) {
+      for (const entity of this.spawnedEntities) {
+        entity.update(state, this);
+      }
     }
   }
 
