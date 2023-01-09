@@ -275,7 +275,7 @@ export class World {
 
     this.spawnedEntities = this.spawnedEntities.filter((entity) => {
       const cameraSpacePos = entity.model.position.clone();
-      cameraSpacePos.project(state.camera);
+      cameraSpacePos.project(state.cameraCamera);
 
       const nearPlanetCenter =
         entity.model.position.y < 100 &&

@@ -42,6 +42,10 @@ const shipParams = {
   beamForce: 0.016,
   shipSlurpDistance: 40,
   shipDespawnDistance: 20,
+
+  shakeSpeed: 0.1,
+  shakeAmplitude: 0.01,
+  shakeDuration: 100,
 };
 
 const cameraVerticalOffset = 200;
@@ -97,6 +101,7 @@ export class GameState extends State<GameContext, EventId> {
 
   cameraPivot: Three.Group;
   camera: Three.Camera;
+  cameraCamera: Three.Camera;
 
   bloomComposer: EffectComposer;
   finalComposer: EffectComposer;
@@ -110,6 +115,9 @@ export class GameState extends State<GameContext, EventId> {
   rayHolder: Three.Group;
 
   tractorBeamLight: Three.SpotLight;
+  shakeRemaining: number = 0;
+  shakeOriginalRotation: Three.Vector2 = new Three.Vector2();
+  time: number = 0;
 
   soundBgm: Three.Audio | undefined;
   beamSfx: Three.Audio | undefined;
@@ -162,6 +170,9 @@ export class GameState extends State<GameContext, EventId> {
       const gameplayOptions = context.gui.addFolder("Gameplay");
       gameplayOptions.add(this, "shipLife", 0, 100);
       gameplayOptions.add(this, "planetSpeed", 0, 0.006);
+      gameplayOptions.add(shipParams, "shakeSpeed", 0, 0.2);
+      gameplayOptions.add(shipParams, "shakeAmplitude", 0, 0.03);
+      gameplayOptions.add(shipParams, "shakeDuration", 0, 500);
     }
 
     // Setup scene
@@ -177,9 +188,21 @@ export class GameState extends State<GameContext, EventId> {
       0.01,
       10000
     );
+
     this.camera.position.z = 500;
     this.camera.lookAt(new Three.Vector3(0, 0, 0));
     this.camera.position.y = this.planetRadius + 200;
+
+    this.cameraCamera = new Three.OrthographicCamera(
+      -context.renderer.domElement.width / 2,
+      context.renderer.domElement.width / 2,
+      context.renderer.domElement.height / 2,
+      -context.renderer.domElement.height / 2,
+      0.01,
+      10000
+    );
+
+    this.camera.add(this.cameraCamera);
 
     this.cameraPivot = new Three.Group();
     this.cameraPivot.add(this.camera);
@@ -259,7 +282,7 @@ export class GameState extends State<GameContext, EventId> {
         const mesh = new Three.Mesh(geometry, material);
 
         // Move back layers to avoid clipping with entities geometry
-        mesh.position.z = -(layer + 1) * 1000;
+        mesh.position.z = -(layer + 1) * 100;
         this.scene.add(mesh);
       }
     }
@@ -278,7 +301,7 @@ export class GameState extends State<GameContext, EventId> {
         this.titleSprite.position.set(0, 0, -100);
         this.titleSprite.scale.setScalar(300);
 
-        this.camera.add(this.titleSprite);
+        this.cameraCamera.add(this.titleSprite);
       });
     }
 
@@ -289,7 +312,7 @@ export class GameState extends State<GameContext, EventId> {
       const m = new Three.MeshBasicMaterial({ color: bw(0.9) });
       const moon = new Three.Mesh(g, m);
       this.camera.add(moon);
-      moon.position.set(-400, 300, -5000);
+      moon.position.set(-400, 300, -1000);
 
       const light = new Three.PointLight(0xffffff, 1, 2000);
       light.position.set(-900, 1000, 100);
@@ -445,9 +468,12 @@ export class GameState extends State<GameContext, EventId> {
               pair.bodyA == this.shipPhysics ? pair.bodyB : pair.bodyA;
 
             this.shipLife -= 10;
+            this.cameraShake();
             this.shipLife = clamp(this.shipLife, 0, 100);
             const bulletEntity = this.world.lookupEntity(bullet);
-            if (bulletEntity) this.world.despawn(bulletEntity, this);
+            if (bulletEntity) {
+              this.world.despawn(bulletEntity, this);
+            }
           }
         }
       });
@@ -634,7 +660,7 @@ export class GameState extends State<GameContext, EventId> {
     this.bloomComposer = new EffectComposer(context.renderer);
     this.finalComposer = new EffectComposer(context.renderer);
 
-    const renderPass = new RenderPass(this.scene, this.camera);
+    const renderPass = new RenderPass(this.scene, this.cameraCamera);
 
     const filmPass = new FilmPass(0.3, 0, 0, 0);
 
@@ -724,6 +750,32 @@ export class GameState extends State<GameContext, EventId> {
     this.world.reset(this);
   }
 
+  cameraShake() {
+    this.shakeRemaining = shipParams.shakeDuration;
+    this.shakeOriginalRotation.x = this.camera.rotation.x;
+    this.shakeOriginalRotation.y = this.camera.rotation.y;
+  }
+
+  updateCameraShake() {
+    const dt = 1000/60;
+    this.time += 1000/60;
+    if (this.shakeRemaining > 0) {
+      const dx = Math.sin(this.time * shipParams.shakeSpeed) * shipParams.shakeAmplitude;
+      const dy = Math.cos(this.time * shipParams.shakeSpeed) * shipParams.shakeAmplitude * dx;
+      this.cameraCamera.rotation.x += dx;
+      this.cameraCamera.rotation.y += dy;
+
+      this.shakeRemaining -= dt;
+      if (this.shakeRemaining <= 0) {
+        this.shakeRemaining = 0;
+        if (this.shakeOriginalRotation) {
+          this.cameraCamera.rotation.x = this.shakeOriginalRotation.x;
+          this.cameraCamera.rotation.y = this.shakeOriginalRotation.y;
+        }
+      }
+    }
+  }
+
   updateUI(context: GameContext) {
     if (this.playState == PlayState.Intro) {
       context.ui.globalCompositeOperation = "source-over";
@@ -753,7 +805,7 @@ export class GameState extends State<GameContext, EventId> {
 
       const worldShipPosition = new Three.Vector3();
       this.ship.getWorldPosition(worldShipPosition);
-      worldShipPosition.project(this.camera);
+      worldShipPosition.project(this.cameraCamera);
 
       const center = new Three.Vector2(
         (worldShipPosition.x + 1) * 400,
@@ -974,7 +1026,7 @@ export class GameState extends State<GameContext, EventId> {
     );
 
     const raycaster = new Three.Raycaster();
-    raycaster.setFromCamera(viewCursor, this.camera);
+    raycaster.setFromCamera(viewCursor, this.cameraCamera);
 
     // if (context.inputs.isButtonClicked(0)) {
     //   for (const entity of this.world.spawnedEntities) {
@@ -1109,7 +1161,7 @@ export class GameState extends State<GameContext, EventId> {
 
       const worldShipPosition = new Three.Vector3();
       this.ship.getWorldPosition(worldShipPosition);
-      worldShipPosition.project(this.camera);
+      worldShipPosition.project(this.cameraCamera);
 
       const normalShipPosition = new Three.Vector2(
         worldShipPosition.x,
@@ -1265,6 +1317,7 @@ export class GameState extends State<GameContext, EventId> {
 
     // Update
 
+    this.updateCameraShake();
     TWEEN.update();
     Matter.Engine.update(this.physics, 1000 / 60);
     this.world.update(this, context);
