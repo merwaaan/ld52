@@ -602,8 +602,11 @@ export class GameState extends State<GameContext, EventId> {
       context.ui.arc(400, 300, this.circleMaskRadius, 0, Math.PI*2);
       context.ui.fill();
 
-      if (this.circleMaskRadius >= 400) {
+      if (this.circleMaskRadius >= 600) {
         this.playState = PlayState.IntroExit;
+      }
+      else if (this.circleMaskRadius >= 400) {
+        this.isPaused = false;
       }
     } else if (this.playState == PlayState.IntroExit) {
       context.ui.clearRect(0, 0, 800, 600);
