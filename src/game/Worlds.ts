@@ -85,10 +85,10 @@ export class World {
       tree(0.01),
       tree(0.03),
       medRock(0.05),
-
       cow(0.08),
       tree(0.09),
       cow(0.1),
+      human(0.12),
     ];
     this.entitiesToSpawn = desc;
 
