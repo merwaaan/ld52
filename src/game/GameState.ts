@@ -97,7 +97,7 @@ export class GameState extends State<GameContext, EventId> {
   scoreRockMultiplier: number = -10;
 
   playState: PlayState;
-  isPaused: boolean = false;
+  isPaused: boolean = true;
   circleMaskRadius: number;
 
   cameraPivot: Three.Group;
@@ -776,7 +776,7 @@ export class GameState extends State<GameContext, EventId> {
     this.planetRotation = 0;
     this.cameraPivot.rotation.z = 0;
 
-    this.isPaused = false;
+    this.isPaused = true;
 
     this.caughtCows = 0;
     this.caughtHumans = 0;
