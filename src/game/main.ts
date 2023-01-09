@@ -27,6 +27,8 @@ import bgSfxPath from "url:./assets/sfx/bg.ogg";
 import beamSfxPath from "url:./assets/sfx/beam.ogg";
 import shipSfxPath from "url:./assets/sfx/ship.ogg";
 
+import scoreFontPath from "url:./assets/fonts/optimer_bold.typeface.font";
+
 const assets = new Assets({
   models: {
     barn: barnModelPath,
@@ -49,6 +51,10 @@ const assets = new Assets({
     cloud2: cloud2TexPath,
     cloud3: cloud3TexPath,
     title: titleTexPath,
+  },
+
+  fonts: {
+    scoreFont: scoreFontPath,
   },
 });
 

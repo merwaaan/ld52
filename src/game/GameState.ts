@@ -4,6 +4,7 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass";
 import { FilmPass } from "three/examples/jsm/postprocessing/FilmPass";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
 import * as TWEEN from "@tweenjs/tween.js";
 import Matter from "matter-js";
 import { createNoise2D } from "simplex-noise";
@@ -22,6 +23,7 @@ import { Cow } from "./Cow";
 import { Rock } from "./Rock";
 import { Tree } from "./Tree";
 import { Tank } from "./Tank";
+import { Human } from "./Human";
 import { bwMaterial, colors, bwMaterialUnlit, bw } from "./colors";
 
 const shipParams = {
@@ -53,6 +55,27 @@ enum PlayState {
   DeathFade,
   WaitingForReset,
   ResetExit,
+}
+
+class ScoreBubble {
+  mesh: Three.Mesh;
+  velocity: Three.Vector2;
+  duration: number;
+  isDead: boolean;
+
+  constructor(mesh: Three.Mesh, velocity: Three.Vector2, duration: number) {
+    this.mesh = mesh;
+    this.velocity = velocity.clone();
+    this.duration = duration;
+    this.isDead = false;
+  }
+
+  update(context: GameContext) {
+    const dt = 1000 / 60;
+    this.duration -= dt;
+    if (this.duration <= 0)
+      this.isDead = true;
+  }
 }
 
 export class GameState extends State<GameContext, EventId> {
@@ -110,6 +133,8 @@ export class GameState extends State<GameContext, EventId> {
   shipLifeBar: Three.Mesh;
 
   titleSprite: Three.Sprite = new Three.Sprite();
+
+  scoreBubbles: ScoreBubble[] = [];
 
   constructor(context: GameContext) {
     super();
@@ -694,6 +719,8 @@ export class GameState extends State<GameContext, EventId> {
     this.caughtTrees = 0;
     this.caughtRocks = 0;
 
+    this.scoreBubbles.length = 0;
+
     this.world.reset(this);
   }
 
@@ -825,6 +852,50 @@ export class GameState extends State<GameContext, EventId> {
         this.playState = PlayState.IntroExit;
       }
     }
+  }
+
+  spawnScoreBubble(context: GameContext, score: number) {
+    const color = (score > 0) ? 0x00ff00 : 0xff0000;
+    const text = (score > 0) ? ("+" + score) : (""+score);
+
+    const geometry = new TextGeometry(text, {
+      font: context.assets.font("scoreFont"),
+      size: 20,
+      curveSegments: 2,
+    });
+
+    const material = new Three.MeshBasicMaterial({ color: color });
+    material.transparent = true;
+    const mesh = new Three.Mesh(geometry, material);
+
+    mesh.position.x = this.ship.position.x;
+    mesh.position.y = this.ship.position.y + 50;
+    mesh.position.z = -200;
+
+    this.camera.add(mesh);
+    const b = new ScoreBubble(mesh, new Three.Vector2(0,1), 1000);
+    new TWEEN.Tween(b.mesh.position)
+      .to({ y: "+40" }, 1000)
+      .easing(TWEEN.Easing.Quartic.Out)
+      .start();
+    new TWEEN.Tween(b.mesh.material)
+      .to({ opacity: 0 }, 1200)
+      .easing(TWEEN.Easing.Quartic.Out)
+      .start();
+    new TWEEN.Tween(b.mesh.scale)
+      .to({ x: 1.5, y: 1.5 }, 1200)
+      .easing(TWEEN.Easing.Quartic.Out)
+      .start();
+    this.scoreBubbles.push(b);
+  }
+
+  updateScoreBubbles(context: GameContext) {
+    for (const b of this.scoreBubbles) {
+      b.update(context);
+      if (b.isDead)
+        this.camera.remove(b.mesh);
+    }
+    this.scoreBubbles = this.scoreBubbles.filter((b) => !b.isDead);
   }
 
   update(context: GameContext, doTransition: (eventId: EventId) => void) {
@@ -1111,12 +1182,15 @@ export class GameState extends State<GameContext, EventId> {
             this.world.despawn(entity, this);
             this.attractedEntities.delete(entity);
 
+            let score = 0;
             if (entity instanceof Cow) {
               //this.shipLife += 10;
               this.caughtCows += 1;
+              score = this.scoreCowMultiplier;
             } else if (entity instanceof Tree) {
               //this.shipLife += 1;
               this.caughtTrees += 1;
+              score = this.scoreTreeMultiplier;
             } else if (entity instanceof Rock) {
               // if (entity.size >= 20) {
               //   this.shipLife -= 10;
@@ -1124,9 +1198,18 @@ export class GameState extends State<GameContext, EventId> {
               //   this.shipLife -= 5;
               // }
               this.caughtRocks += 1;
+              score = this.scoreRockMultiplier;
             } else if (entity instanceof Tank) {
               //this.shipLife -= 8;
+            } else if (entity instanceof Human) {
+              this.caughtHumans += 1;
+              score = this.scoreHumanMultiplier;
             }
+
+            if (score != 0) {
+              this.spawnScoreBubble(context, score);
+            }
+
           } else if (distanceToShip < shipParams.shipSlurpDistance) {
             entity.state == EntityState.BeingAbsorbed;
             const scale = distanceToShip / shipParams.shipSlurpDistance;
@@ -1140,6 +1223,9 @@ export class GameState extends State<GameContext, EventId> {
         }
       }
     }
+
+    // Update score bubbles
+    this.updateScoreBubbles(context);
 
     // Update ship life
     if (!this.isPaused) {

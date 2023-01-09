@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { FontLoader, Font } from "three/examples/jsm/loaders/FontLoader";
 
 type AudioBuffer = NonNullable<THREE.Audio["buffer"]>;
 
@@ -9,6 +10,7 @@ interface AssetList {
   models?: { [key: string]: string };
   textures?: { [key: string]: string };
   sounds?: { [key: string]: string };
+  fonts?: { [key: string]: string };
 }
 
 type OnReadyCallback<TAssets> = (assets: TAssets) => void;
@@ -23,6 +25,9 @@ export class Assets<TAssets extends AssetList> {
   private _sounds: { [key in keyof TAssets["sounds"]]: AudioBuffer } = {} as {
     [key in keyof TAssets["sounds"]]: AudioBuffer;
   };
+  private _fonts: { [key in keyof TAssets["fonts"]]: Font } = {} as {
+    [key in keyof TAssets["fonts"]]: Font;
+  };
 
   private _assetsCount: number = 0;
   private _loadedCount: number = 0;
@@ -36,7 +41,8 @@ export class Assets<TAssets extends AssetList> {
     this._assetsCount =
       Object.keys(assetList["models"] ?? {}).length +
       Object.keys(assetList["textures"] ?? {}).length +
-      Object.keys(assetList["sounds"] ?? {}).length;
+      Object.keys(assetList["sounds"] ?? {}).length +
+      Object.keys(assetList["fonts"] ?? {}).length;
   }
 
   get loaded() {
@@ -104,6 +110,15 @@ export class Assets<TAssets extends AssetList> {
       });
     });
 
+    // Fonts
+
+    Object.entries(this._assetList["fonts"] ?? {}).forEach(([id, path]) => {
+      new FontLoader(manager).load(path, (font) => {
+        this._fonts[id as keyof TAssets["fonts"]] = font;
+        this.checkAllLoaded();
+      });
+    });
+
     return this;
   }
 
@@ -128,5 +143,9 @@ export class Assets<TAssets extends AssetList> {
 
   sound(id: keyof TAssets["sounds"]): AudioBuffer {
     return this._sounds[id];
+  }
+
+  font(id: keyof TAssets["fonts"]): Font {
+    return this._fonts[id];
   }
 }
