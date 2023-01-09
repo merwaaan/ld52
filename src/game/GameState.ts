@@ -122,6 +122,7 @@ export class GameState extends State<GameContext, EventId> {
     // Setup scene
 
     this.scene = new Three.Scene();
+    this.scene.background = new Three.Color(bw(0.01));
 
     this.camera = new Three.OrthographicCamera(
       -context.renderer.domElement.width / 2,
@@ -142,10 +143,10 @@ export class GameState extends State<GameContext, EventId> {
     const ambientLight = new Three.AmbientLight(0xffffff, 0.12);
     //this.scene.add(ambientLight);
 
-    const light = new Three.DirectionalLight(0xffffff, 0.05);
-    light.position.set(-500, this.planetRadius + 500, 500);
-    light.target.position.set(0, 0, 0);
-    this.scene.add(light);
+    // const light = new Three.DirectionalLight(0xffffff, 0.05);
+    // light.position.set(-500, this.planetRadius + 500, 500);
+    // light.target.position.set(0, 0, 0);
+    // this.scene.add(light);
 
     const axesHelper = new Three.AxesHelper(50);
     this.scene.add(axesHelper);
@@ -224,6 +225,10 @@ export class GameState extends State<GameContext, EventId> {
       const moon = new Three.Mesh(g, m);
       this.camera.add(moon);
       moon.position.set(-400, 300, -5000);
+
+      const light = new Three.PointLight(0xffffff, 1, 2000);
+      light.position.set(-900, 1000, 100);
+      this.camera.add(light);
     }
 
     // Clouds
@@ -242,7 +247,7 @@ export class GameState extends State<GameContext, EventId> {
           const sw = 700;
 
           const x = randomBetween(-sw, sw);
-          const y = randomBetween(0, 300);
+          const y = randomBetween(50, 300);
           sprite.position.set(x, y, -500);
 
           const s = randomBetween(1, 2);
@@ -263,9 +268,31 @@ export class GameState extends State<GameContext, EventId> {
             .start();
         };
 
-        for (let i = 0; i < 3; ++i) cloud("cloud1");
-        for (let i = 0; i < 3; ++i) cloud("cloud2");
-        for (let i = 0; i < 3; ++i) cloud("cloud3");
+        const c = 2;
+        for (let i = 0; i < c; ++i) cloud("cloud1");
+        for (let i = 0; i < c; ++i) cloud("cloud2");
+        for (let i = 0; i < c; ++i) cloud("cloud3");
+
+        const star = () => {
+          const col = bw(randomBetween(0.8, 0.95));
+          const g = new Three.BoxGeometry(1, 1, 1);
+          const m = new Three.MeshBasicMaterial({ color: col });
+          const obj = new Three.Mesh(g, m);
+
+          const sw = 700;
+          const x = randomBetween(-sw, sw);
+          const y = randomBetween(0, 300);
+          obj.position.set(x, y, -600);
+
+          const s = randomBetween(1, 4);
+          obj.scale.setScalar(s);
+
+          obj.rotateZ(Math.random() * 2 * Math.PI);
+
+          this.camera.add(obj);
+        };
+
+        for (let i = 0; i < 20; ++i) star();
       });
     }
 
@@ -278,11 +305,56 @@ export class GameState extends State<GameContext, EventId> {
       context.assets.onReady((assets) => {
         const shipModel = assets.model("ufo");
         this.ship.add(shipModel);
-        shipModel.traverse((child) => {
+
+        // Materials
+
+        /*shipModel.traverse((child) => {
           if (child instanceof Three.Mesh) {
             child.material = bwMaterial(0.6);
           }
+        });*/
+
+        const applyMat = (
+          nodeName: string,
+          matData: Three.MeshPhongMaterialParameters
+        ) => {
+          const node = this.ship.getObjectByName(nodeName) as
+            | Three.Mesh
+            | undefined;
+          if (node) {
+            node.material = new Three.MeshPhongMaterial(matData);
+          }
+        };
+
+        applyMat("base", {
+          emissive: 0x505050,
+          specular: 0xffffff,
+          shininess: 80,
         });
+
+        applyMat("dome", {
+          transparent: true,
+          opacity: 0.3,
+          specular: 0xffffff,
+          shininess: 60,
+        });
+
+        applyMat("eye1", {
+          emissive: 0xff0000,
+        });
+
+        applyMat("eye2", {
+          emissive: 0xff0000,
+        });
+
+        const head = this.ship.getObjectByName("head") as
+          | Three.Mesh
+          | undefined;
+        if (head) {
+          head.material = bwMaterial(0.6);
+        }
+
+        const eye = this.ship.getObjectByName("eye");
       });
 
       this.shipPhysics = Matter.Bodies.rectangle(0, 0, 160, 60, {
@@ -495,8 +567,18 @@ export class GameState extends State<GameContext, EventId> {
 
     this.composer = new EffectComposer(context.renderer);
     const renderPass = new RenderPass(this.scene, this.camera);
-    const filmPass = new FilmPass(0.6, 0.2, 100, 1);
+    const filmPass = new FilmPass(0.6, 0, 100, 0);
+    const bloomPass = new UnrealBloomPass(
+      new Three.Vector2(
+        context.renderer.domElement.width,
+        context.renderer.domElement.height
+      ),
+      0.5,
+      0.2,
+      0.2
+    );
     this.composer.addPass(renderPass);
+    //this.composer.addPass(bloomPass);
     this.composer.addPass(filmPass);
 
     this.circleMaskRadius = 80;

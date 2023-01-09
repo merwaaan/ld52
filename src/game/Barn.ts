@@ -15,7 +15,7 @@ export class Barn extends Entity {
 
     this.model = new Three.Group();
 
-    this.physics = Matter.Bodies.rectangle(x, -y - 30, size, size, {
+    this.physics = Matter.Bodies.rectangle(x, -y, size, size, {
       isStatic: true,
       frictionStatic: 10,
       plugin: planetAttraction(),

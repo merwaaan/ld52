@@ -31,6 +31,12 @@ export function bwMaterialUnlit(intensity: number) {
   });
 }
 
+export function glowMaterial(color: string) {
+  return new Three.MeshBasicMaterial({
+    color: color,
+  });
+}
+
 export function assignMaterial(
   object: Three.Object3D,
   material: Three.Material
