@@ -688,6 +688,11 @@ export class GameState extends State<GameContext, EventId> {
 
     this.isPaused = false;
 
+    this.caughtCows = 0;
+    this.caughtHumans = 0;
+    this.caughtTrees = 0;
+    this.caughtRocks = 0;
+
     this.world.reset(this);
   }
 
@@ -743,33 +748,45 @@ export class GameState extends State<GameContext, EventId> {
         context.ui.font = '32px Courier';
         context.ui.fillStyle = "#eee";
 
+        const ws = 250;
         let hs = 100;
+        let score = 0;
 
         {
           const text = "Trees:  " + this.scoreTreeMultiplier + " * " + this.caughtTrees;
-          let m = context.ui.measureText(text);
-          context.ui.fillText(text, w/2 - m.width/2, hs);
+          score += this.scoreTreeMultiplier* this.caughtTrees;
+          context.ui.fillText(text, ws, hs);
           hs += 40;
         }
 
         {
           const text = "Humans: " + this.scoreHumanMultiplier + " * " + this.caughtHumans;
+          score += this.scoreHumanMultiplier* this.caughtHumans;
           let m = context.ui.measureText(text);
-          context.ui.fillText(text, w/2 - m.width/2, hs);
+          context.ui.fillText(text, ws, hs);
           hs += 40;
         }
 
         {
           const text = "Cows:   " + this.scoreCowMultiplier + " * " + this.caughtCows;
+          score += this.scoreCowMultiplier* this.caughtCows;
           let m = context.ui.measureText(text);
-          context.ui.fillText(text, w/2 - m.width/2, hs);
+          context.ui.fillText(text, ws, hs);
           hs += 40;
         }
 
         {
           const text = "Rocks:  " + this.scoreRockMultiplier + " * " + this.caughtRocks;
+          score += this.scoreRockMultiplier* this.caughtRocks;
           let m = context.ui.measureText(text);
-          context.ui.fillText(text, w/2 - m.width/2, hs);
+          context.ui.fillText(text, ws, hs);
+          hs += 40;
+        }
+
+        {
+          const text = "Total: " + score;
+          let m = context.ui.measureText(text);
+          context.ui.fillText(text, ws, hs);
           hs += 40;
         }
 
@@ -805,8 +822,6 @@ export class GameState extends State<GameContext, EventId> {
 
       if (this.circleMaskRadius >= 600) {
         this.playState = PlayState.IntroExit;
-      } else if (this.circleMaskRadius >= 400) {
-        this.isPaused = false;
       }
     }
   }
