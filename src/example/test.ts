@@ -43,10 +43,12 @@ const assets = new Assets({
 
 // Setup game
 
+export const DEBUG = false;
+
 export type GameContext = {
   renderer: THREE.WebGLRenderer;
   inputs: Inputs;
-  gui: dat.GUI;
+  gui: dat.GUI | undefined;
   assets: typeof assets;
 };
 
@@ -59,13 +61,15 @@ function setup() {
   const gameContext: GameContext = {
     renderer: new THREE.WebGLRenderer({ antialias: true }),
     inputs: new Inputs(),
-    gui: new dat.GUI(),
+    gui: DEBUG ? new dat.GUI() : undefined,
     assets,
   };
 
   gameContext.renderer.setSize(800, 600);
   gameContext.renderer.setClearColor(0x0, 1);
-  document.body.appendChild(gameContext.renderer.domElement);
+  document
+    .getElementById("container")
+    ?.appendChild(gameContext.renderer.domElement);
   gameContext.renderer.domElement.addEventListener("contextmenu", (event) => {
     event.preventDefault();
   });
@@ -86,15 +90,18 @@ function setup() {
   });
 
   // Run
-  const g_stats = new Stats();
-  g_stats.showPanel(1);
-  document.body.appendChild(g_stats.dom);
+  let g_stats: Stats | undefined;
+  if (DEBUG) {
+    g_stats = new Stats();
+    g_stats.showPanel(1);
+    document.body.appendChild(g_stats.dom);
+  }
 
   loop(() => {
-    g_stats.begin();
+    if (g_stats) g_stats.begin();
     machine.update(gameContext);
     gameContext.inputs.update();
-    g_stats.end();
+    if (g_stats) g_stats.end();
   });
 }
 

@@ -10,7 +10,7 @@ import { MatterAttractors } from "./MatterAttractors";
 
 import { EntityState } from "./Entity";
 import { State } from "../StateMachine";
-import { EventId, GameContext } from "./test";
+import { DEBUG, EventId, GameContext } from "./test";
 import { clamp, computeNormalizedPosition } from "../utils";
 import { House } from "./House";
 import { barn, cow, house, tank, tree, World } from "./Worlds";
@@ -83,27 +83,29 @@ export class GameState extends State<GameContext, EventId> {
   constructor(context: GameContext) {
     super();
 
-    const shipOptions = context.gui.addFolder("Ship");
-    shipOptions.add(shipParams, "accelFactor", 0, 2);
-    shipOptions.add(shipParams, "maxSpeed", 0, 20);
-    shipOptions.add(shipParams, "friction", 0.85, 1);
-    shipOptions.add(shipParams, "slantFactorX", 0, 0.1);
-    shipOptions.add(shipParams, "slantFactorY", 0, 0.1);
+    if (context.gui) {
+      const shipOptions = context.gui.addFolder("Ship");
+      shipOptions.add(shipParams, "accelFactor", 0, 2);
+      shipOptions.add(shipParams, "maxSpeed", 0, 20);
+      shipOptions.add(shipParams, "friction", 0.85, 1);
+      shipOptions.add(shipParams, "slantFactorX", 0, 0.1);
+      shipOptions.add(shipParams, "slantFactorY", 0, 0.1);
 
-    const beamOptions = context.gui.addFolder("Beam");
-    beamOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
-    beamOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.3);
-    beamOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
-    beamOptions.add(shipParams, "beamOpenSpeed", 0, 500);
-    beamOptions.add(shipParams, "beamCloseSpeed", 0, 500);
+      const beamOptions = context.gui.addFolder("Beam");
+      beamOptions.add(shipParams, "rayMaxAngle", 0, 0.5);
+      beamOptions.add(shipParams, "rayAngleSpeedFactor", 0, 0.3);
+      beamOptions.add(shipParams, "attractRayOffScale", 0, 0.1);
+      beamOptions.add(shipParams, "beamOpenSpeed", 0, 500);
+      beamOptions.add(shipParams, "beamCloseSpeed", 0, 500);
 
-    const physicsOptions = context.gui.addFolder("Physics");
-    physicsOptions.add(shipParams, "beamForce", 0, 0.02);
-    physicsOptions.add(shipParams, "shipSlurpDistance", 0, 500);
-    physicsOptions.add(shipParams, "shipDespawnDistance", 0, 100);
+      const physicsOptions = context.gui.addFolder("Physics");
+      physicsOptions.add(shipParams, "beamForce", 0, 0.02);
+      physicsOptions.add(shipParams, "shipSlurpDistance", 0, 500);
+      physicsOptions.add(shipParams, "shipDespawnDistance", 0, 100);
 
-    const gameplayOptions = context.gui.addFolder("Gameplay");
-    gameplayOptions.add(this, "shipLife", 0, 100);
+      const gameplayOptions = context.gui.addFolder("Gameplay");
+      gameplayOptions.add(this, "shipLife", 0, 100);
+    }
 
     // Setup scene
 
@@ -374,17 +376,24 @@ export class GameState extends State<GameContext, EventId> {
     }
 
     // Physics debugger
-    this.physicsRenderer = Matter.Render.create({
-      engine: this.physics,
-      element: document.body,
-      options: {
-        width: 400,
-        height: 400,
-        hasBounds: true,
-        showVelocity: true,
-        showSleeping: true,
-      },
-    });
+    {
+      if (DEBUG) {
+        this.physicsRenderer = Matter.Render.create(
+          {engine: this.physics,
+           element: document.body,
+           options: {
+          width: 400,
+          height: 400,
+          hasBounds: true,
+          showVelocity: true,
+          showSleeping: true,
+           }
+          });
+      } else {
+        this.physicsRenderer = Matter.Render.create(
+          {engine: this.physics});
+      }
+    }
 
     Matter.Render.lookAt(
       this.physicsRenderer,
